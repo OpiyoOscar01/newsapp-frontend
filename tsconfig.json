@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,                      // Enables all strict type-checking options
+    "forceConsistentCasingInFileNames": true, // Ensures consistent file casing across OSes
+    "target": "ES2022",                  // Example target
+    "module": "ESNext",                  // Example module system
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx"
+  },
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
