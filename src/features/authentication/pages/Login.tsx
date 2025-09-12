@@ -3,7 +3,7 @@
  * Purpose: Handle user login UI and interaction
  */
 import React, { useState } from "react";
-import { Helmet} from "react-helmet-async"; // ✅ correct import
+import { Helmet} from "react-helmet-async"; 
 import { Link } from "react-router-dom";
 import { BsEnvelope, BsLock, BsGithub, BsGoogle } from "react-icons/bs";
 import { useAuth, useGuestOnly } from "../hooks/useAuth";
@@ -83,7 +83,7 @@ const Login: React.FC = () => {
               Welcome Back
             </h1>
             <p className="text-gray-600 mt-2">
-              Sign in to your Definepress account
+              Sign in to your DefinePress account
             </p>
           </div>
 
