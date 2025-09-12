@@ -8,8 +8,8 @@ function AuthLayout() {
     <>
 
       <Helmet>
-        <title>Auth - Newsly</title>
-        <meta name="description" content="Your account on Newsly" />
+        <title>Auth - DefinePress</title>
+        <meta name="description" content="Your account on DefinePress" />
       </Helmet>
       <AuthNavbar />
       <Outlet />

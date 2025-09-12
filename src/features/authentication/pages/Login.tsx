@@ -83,7 +83,7 @@ const Login: React.FC = () => {
               Welcome Back
             </h1>
             <p className="text-gray-600 mt-2">
-              Sign in to your Custospace account
+              Sign in to your Definepress account
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { ROUTES } from "../../../../config/navigation";
 import { BsHouseDoor, BsBoxArrowInRight, BsPersonPlus } from "react-icons/bs";
-import logo from "../../../assets/logo.png"; // Adjust the path to your logo image
+import logo from "../../../../assets/logo.png";
 
 function AuthNavbar() {
   return (
@@ -9,7 +9,7 @@ function AuthNavbar() {
       {/* Logo and Brand */}
       <div className="flex items-center gap-3">
         <img src={logo} alt="Logo" className="w-8 h-8 object-contain rounded-full" />
-        <h2 className="text-xl font-semibold text-gray-800">Newly</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Definepress</h2>
       </div>
 
       {/* Navigation Links */}

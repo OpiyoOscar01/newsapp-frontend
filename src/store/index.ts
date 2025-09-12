@@ -9,7 +9,7 @@ import { combineReducers } from '@reduxjs/toolkit';
 import authReducer from '../features/authentication/store/slices/authSlice';
 
 const persistConfig = {
-  key: 'newsly-root',
+  key: 'Definepress-root',
   storage,
   whitelist: ['auth'], // Only persist auth state
   version: 1,

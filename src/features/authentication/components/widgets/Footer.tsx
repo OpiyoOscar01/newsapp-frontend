@@ -9,8 +9,7 @@ function Footer() {
     <footer className="bg-gray-100 text-gray-700 text-sm py-6 mt-10">
       {/* Copyright */}
       <div className="text-center mb-2">
-        <p>© {new Date().getFullYear()} Newsly. All rights reserved.</p>
-        <p>Newsly is a product of Newsly Company Ltd.</p>
+        <p>© {new Date().getFullYear()} Definepress. All rights reserved.</p>
       </div>
 
       {/* Policy Links */}
@@ -35,7 +34,7 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-700"
-            aria-label="Newly Twitter"
+            aria-label="Definepress Twitter"
           >
             <BsTwitter size={20} />
           </a>
@@ -44,7 +43,7 @@ function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800"
-            aria-label="Newly Facebook"
+            aria-label="Definepress Facebook"
           >
             <BsFacebook size={20} />
           </a>
@@ -53,7 +52,7 @@ function Footer() {
         target="_blank"
         rel="noopener noreferrer"
         className="text-pink-500 hover:text-pink-700"
-        aria-label="Newly Instagram"
+        aria-label="Definepress Instagram"
       >
         <BsInstagram size={20} />
       </a>

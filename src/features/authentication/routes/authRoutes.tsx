@@ -11,3 +11,4 @@ export const authRoutes: RouteObject = {
     { path: "register", element: <Register /> },
   ],
 };
+
