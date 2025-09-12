@@ -42,12 +42,12 @@ function AuthNavbar() {
             />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 tracking-tight">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600 tracking-tight">
               DefinePress
             </h1>
-            <span className="hidden sm:block text-xs text-gray-500 font-medium">
-              Content Management
-            </span>
+            {/* <span className="hidden sm:block text-xs text-gray-500 font-medium">
+              Definepress
+            </span> */}
           </div>
         </div>
 
