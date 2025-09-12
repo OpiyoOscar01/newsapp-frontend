@@ -71,7 +71,7 @@ const Login: React.FC = () => {
         <title>Login - Custospace</title>
         <meta
           name="description"
-          content="Login to your Custospace account"
+          content="Login to your Definepressaccount"
         />
       </Helmet>
 

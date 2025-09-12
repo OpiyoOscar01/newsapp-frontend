@@ -25,7 +25,7 @@ const ROUTES = {
 /**
  * Type definition for route keys
  */
-type RouteKey = keyof typeof ROUTES;
+// type RouteKey = keyof typeof ROUTES;
 
 /**
  * Interface for navigation item structure
@@ -189,7 +189,7 @@ const HomeNavbar: React.FC<HomeNavbarProps> = ({
             type="button"
             className="lg:hidden p-2 rounded-md text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
             onClick={handleMobileMenuToggle}
-            aria-expanded={isMobileMenuOpen}
+            aria-expanded={isMobileMenuOpen ? "true" : "false"}
             aria-controls="mobile-menu"
             aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
           >
@@ -199,6 +199,7 @@ const HomeNavbar: React.FC<HomeNavbarProps> = ({
               <BsList className="w-6 h-6" />
             )}
           </button>
+
         </div>
 
         {/* Mobile Navigation Menu */}

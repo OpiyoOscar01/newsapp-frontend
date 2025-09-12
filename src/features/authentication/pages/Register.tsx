@@ -71,7 +71,7 @@ const Register: React.FC = () => {
     <>
       <Helmet>
         <title>Create Account - Custospace</title>
-        <meta name="description" content="Create a new Custospace account" />
+        <meta name="description" content="Create a new Definepressaccount" />
       </Helmet>
 
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -81,7 +81,7 @@ const Register: React.FC = () => {
               Create Account
             </h1>
             <p className="text-gray-600 mt-2">
-              Join Custospace today
+              Join DefinePress today
             </p>
           </div>
 

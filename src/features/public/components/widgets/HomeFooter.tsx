@@ -105,7 +105,7 @@ function HomeFooter() {
                       <BsNewspaper className="text-xl sm:text-2xl text-white" />
                     </div>
                     <h3 className="text-xl sm:text-2xl font-black text-white">
-                      Define<span className="text-blue-400">Press</span>
+                      <span className="text-blue-400">DefinePress</span>
                     </h3>
                   </div>
                   <p className="text-blue-200 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base">

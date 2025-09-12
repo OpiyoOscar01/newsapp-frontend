@@ -397,7 +397,7 @@ const Home: React.FC = () => {
       </main>
 
       {/* Custom CSS for animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes marquee {
           0% { transform: translate3d(100%, 0, 0); }
           100% { transform: translate3d(-100%, 0, 0); }
