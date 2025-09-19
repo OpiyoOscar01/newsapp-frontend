@@ -12,6 +12,7 @@ import {
   BsShield,
   BsAward
 } from "react-icons/bs";
+import NewsCardDemo from "../../../news/pages/NewsCardDemo";
 
 function HomeFooter() {
   const currentYear = new Date().getFullYear();
@@ -141,7 +142,7 @@ function HomeFooter() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> 
 
               {/* News Categories */}
               <div className="text-center sm:text-left">
