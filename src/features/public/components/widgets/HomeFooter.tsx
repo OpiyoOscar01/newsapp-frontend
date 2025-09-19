@@ -12,7 +12,6 @@ import {
   BsShield,
   BsAward
 } from "react-icons/bs";
-import NewsCardDemo from "../../../news/pages/NewsCardDemo";
 
 function HomeFooter() {
   const currentYear = new Date().getFullYear();
