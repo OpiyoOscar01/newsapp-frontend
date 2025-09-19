@@ -6,7 +6,7 @@ const generateMockNews = (): CategoryData[] => {
       articles: [
         {
           id: 'tech-1',
-          image_url: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=600&fit=crop',
+          image_url: 'https://www.pexels.com/photo/a-woman-using-virtual-goggles-8728382/',
           title: 'AI Revolution: How Machine Learning is Transforming Industries',
           description: 'Artificial Intelligence continues to reshape various sectors, from healthcare to finance. Companies are investing billions in AI research, leading to groundbreaking innovations that promise to change how we work and live. The latest developments in neural networks and deep learning are opening new possibilities.',
           author: 'Sarah Chen',
