@@ -56,18 +56,35 @@
 // export default App;
 
 
-import AppRoutes from './features/news/routes/AppRoutes';
+// import AppRoutes from './features/news/routes/AppRoutes';
+// import './App.css';
+
+// /**
+//  * Main App component
+//  * Entry point for the React application
+//  */
+// function App() {
+//   return (
+//     <div className="App">
+//       <AppRoutes />
+//     </div>
+//   );
+// }
+
+// export default App;
+
+
+import { BrowserRouter as Router } from 'react-router-dom';
+import AppRoutes from './news/routes/AppRoutes';
 import './App.css';
 
-/**
- * Main App component
- * Entry point for the React application
- */
 function App() {
   return (
-    <div className="App">
-      <AppRoutes />
-    </div>
+    <Router>
+      <div className="App">
+        <AppRoutes />
+      </div>
+    </Router>
   );
 }
 
