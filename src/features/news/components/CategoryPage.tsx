@@ -46,7 +46,7 @@ const CategoryPage: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = () => {
     // Navigate to articles page for this category (future implementation)
     // For now, we'll navigate to a placeholder article
     navigate(`/article/1`);

@@ -16,16 +16,16 @@ const NewsCard: React.FC<NewsCardProps> = ({
   showImage = true,
   className = ''
 }) => {
-  const getSizeClasses = () => {
-    switch (size) {
-      case 'small':
-        return 'h-24';
-      case 'large':
-        return 'h-80 md:h-96';
-      default:
-        return 'h-48 md:h-64';
-    }
-  };
+  // const getSizeClasses = () => {
+  //   switch (size) {
+  //     case 'small':
+  //       return 'h-24';
+  //     case 'large':
+  //       return 'h-80 md:h-96';
+  //     default:
+  //       return 'h-48 md:h-64';
+  //   }
+  // };
 
   const getImageSize = () => {
     switch (size) {
