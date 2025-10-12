@@ -345,7 +345,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
             </svg>
             
-            <span className="relative font-black tracking-wide">
+            <span className="relative font-black tracking-wide text-blue-500">
               Explore all {name}
             </span>
             

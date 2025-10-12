@@ -24,13 +24,18 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link 
-              to="/" 
-              className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors"
-            >
-              DefinePress
-            </Link>
-          </div>
+  <Link
+    to="/"
+    className="relative inline-block text-3xl font-extrabold tracking-tight text-transparent bg-clip-text 
+               bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 
+               hover:from-blue-500 hover:via-blue-600 hover:to-blue-800 
+               transition-all duration-300"
+  >
+    Define<span className="text-black drop-shadow-sm">Press</span>
+    <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-400 to-blue-700 scale-x-0 hover:scale-x-100 origin-left transition-transform duration-300"></span>
+  </Link>
+</div>
+
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">

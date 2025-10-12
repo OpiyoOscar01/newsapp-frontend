@@ -34,7 +34,7 @@ const LandingPage: React.FC = () => {
     <div className="max-w-4xl">
       <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight">
         Stay Informed with{" "}
-        <span className="text-white/80">DefinePress</span>
+        <span className="text-white/80">DefinePress.</span>
       </h1>
       <p className="text-lg md:text-2xl text-white/70 mb-8">
         Your trusted source for breaking news, in-depth analysis, and
@@ -112,7 +112,7 @@ const LandingPage: React.FC = () => {
                   to={`/category/${category.slug}`}
                   className="text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1"
                 >
-                  <span>View All</span>
+                  <span className="text-blue-500">View All in {category.name} News</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
