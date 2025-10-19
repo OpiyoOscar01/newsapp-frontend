@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
                hover:from-blue-500 hover:via-blue-600 hover:to-blue-800 
                transition-all duration-300"
   >
-    Define<span className="text-black drop-shadow-sm">Press</span>
+    Define<span className="text-gray-800">Press</span>
     <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-400 to-blue-700 scale-x-0 hover:scale-x-100 origin-left transition-transform duration-300"></span>
   </Link>
 </div>
