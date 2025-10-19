@@ -183,7 +183,7 @@ const SearchPage: React.FC = () => {
                     <NewsCard
                       key={article.id}
                       article={article}
-                      size="medium"
+                      variant="medium"
                       showImage={true}
                     />
                   ))}

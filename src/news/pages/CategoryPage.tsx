@@ -187,7 +187,7 @@ const CategoryPage: React.FC = () => {
                       <NewsCard
                         key={item.id}
                         article={item}
-                        size="medium"
+                        variant="medium"
                         showImage={true}
                       />
                     );

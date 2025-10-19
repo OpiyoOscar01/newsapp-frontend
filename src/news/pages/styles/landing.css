@@ -1,0 +1,336 @@
+/* Mobile News Section Enhancements */
+/* Apply these styles to enhance the mobile experience with smooth transitions */
+
+/* ========================================
+   MOBILE-FIRST BASE STYLES (< 768px)
+   ======================================== */
+
+/* Smooth scrolling for horizontal carousels */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced spacing for mobile cards */
+@media (max-width: 768px) {
+  /* First article - prominent display */
+  [data-category] > div > div > div:first-child [class*="NewsCard"] {
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  /* Featured article hover effect on mobile */
+  [data-category] > div > div > div:first-child [class*="NewsCard"]:active {
+    transform: scale(0.98);
+  }
+
+  /* Horizontal compact cards (items 2-4) */
+  [class*="orientation-horizontal"] {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 100px;
+    transition: background-color 0.2s ease;
+  }
+
+  [class*="orientation-horizontal"]:active {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  /* Image positioning for horizontal cards */
+  [class*="orientation-horizontal"] img {
+    width: 100px;
+    min-width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Text content in horizontal cards */
+  [class*="orientation-horizontal"] > div:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0; /* Prevent text overflow */
+  }
+
+  /* Headlines in compact cards */
+  [class*="orientation-horizontal"] h3,
+  [class*="orientation-horizontal"] h4 {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    font-weight: 600;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Meta information (date, category) in compact cards */
+  [class*="orientation-horizontal"] [class*="meta"],
+  [class*="orientation-horizontal"] time,
+  [class*="orientation-horizontal"] .text-sm {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  /* Category sections spacing */
+  section[data-category] {
+    margin-bottom: 3rem;
+  }
+
+  /* Consistent padding for all cards */
+  [class*="NewsCard"] {
+    padding: 0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  /* Large/Featured card styling for first item */
+  [class*="variant-large"],
+  [class*="variant-featured"],
+  [class*="variant-hero"],
+  [class*="variant-spotlight"],
+  [class*="variant-wide"] {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  [class*="variant-large"] img,
+  [class*="variant-featured"] img,
+  [class*="variant-hero"] img,
+  [class*="variant-spotlight"] img,
+  [class*="variant-wide"] img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  /* Compact card container spacing */
+  [class*="variant-compact"] {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Remove extra spacing from last items */
+  [class*="variant-compact"]:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ========================================
+   TABLET ADJUSTMENTS (768px - 1024px)
+   ======================================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Maintain tablet grid layouts */
+  [data-category] [class*="grid-cols-2"] > * {
+    min-height: 200px;
+  }
+
+  /* Adjust image sizes for tablet */
+  [class*="orientation-horizontal"] img {
+    width: 120px;
+    min-width: 120px;
+    height: 120px;
+  }
+
+  /* Slightly larger text on tablets */
+  [class*="orientation-horizontal"] h3,
+  [class*="orientation-horizontal"] h4 {
+    font-size: 1rem;
+    -webkit-line-clamp: 2;
+  }
+}
+
+/* ========================================
+   DESKTOP PRESERVATION (> 1024px)
+   ======================================== */
+
+@media (min-width: 1024px) {
+  /* Preserve original desktop layouts */
+  [class*="orientation-horizontal"] {
+    display: block; /* Reset mobile horizontal layout */
+  }
+
+  [class*="orientation-horizontal"] img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* ========================================
+   UTILITY ENHANCEMENTS
+   ======================================== */
+
+/* Smooth transitions for all cards */
+[class*="NewsCard"] {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  [class*="NewsCard"]:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Loading states */
+[class*="NewsCard"].loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Focus states for accessibility */
+[class*="NewsCard"]:focus-within {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Responsive image optimization */
+[class*="NewsCard"] img {
+  background-color: #f3f4f6; /* Placeholder color */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Text truncation helpers */
+.line-clamp-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+/* Category header spacing */
+[data-category] h2 {
+  margin-bottom: 0.5rem;
+}
+
+/* Gradient underlines */
+[data-category] .w-20 {
+  transition: width 0.3s ease;
+}
+
+[data-category]:hover .w-20 {
+  width: 5rem;
+}
+
+/* ========================================
+   ANIMATION ENHANCEMENTS
+   ======================================== */
+
+/* Fade-in animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[class*="NewsCard"] {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+/* Stagger animation for multiple cards */
+[data-category] > div > div > *:nth-child(1) { animation-delay: 0ms; }
+[data-category] > div > div > *:nth-child(2) { animation-delay: 100ms; }
+[data-category] > div > div > *:nth-child(3) { animation-delay: 200ms; }
+[data-category] > div > div > *:nth-child(4) { animation-delay: 300ms; }
+
+/* ========================================
+   MOBILE-SPECIFIC IMAGE ASPECT RATIOS
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* First item - 16:9 aspect ratio for prominence */
+  [data-category] > div > div > div:first-child img {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-height: 220px;
+  }
+
+  /* Horizontal compact cards - square aspect for consistency */
+  [class*="orientation-horizontal"] img {
+    aspect-ratio: 1 / 1;
+    height: auto;
+  }
+
+  /* Prevent layout shift during image load */
+  [class*="NewsCard"] img {
+    display: block;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY IMPROVEMENTS
+   ======================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  [class*="NewsCard"] {
+    border: 2px solid currentColor;
+  }
+
+  [class*="orientation-horizontal"] img {
+    border: 1px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  [class*="NewsCard"],
+  [class*="orientation-horizontal"],
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Dark mode compatibility (if implemented) */
+@media (prefers-color-scheme: dark) {
+  [class*="orientation-horizontal"]:active {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  [class*="NewsCard"] img {
+    background-color: #1f2937;
+  }
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* GPU acceleration for smooth animations */
+[class*="NewsCard"],
+[class*="orientation-horizontal"] {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Optimize repaints */
+[class*="NewsCard"] img {
+  transform: translateZ(0);
+}

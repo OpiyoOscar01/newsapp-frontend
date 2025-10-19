@@ -29,7 +29,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
           <NewsCard
             key={article.id}
             article={article}
-            size="medium"
+            variant="medium"
             showImage={true}
           />
         ))}
