@@ -18,36 +18,36 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
   return (
     <section className={`${className}`}>
       {/* 🔹 Section Header */}
-      <div className="mb-1">
+      <div className="mb-3">
         <h2 className="text-xl font-bold text-gray-900 mb-1">{title}</h2>
-        <div className="w-10 h-1 bg-primary-600 rounded"></div>
+        <div className="w-10 h-1 bg-primary-600 rounded" />
       </div>
 
       {/* 🔹 Articles List */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3">
         {articles.map((article) => (
           <article
             key={article.id}
-            className="group bg-white rounded-lg shadow-sm sm:pt-5 hover:shadow-md transition-all duration-200 overflow-hidden"
+            className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
           >
             <Link
               to={`/article/${article.id}`}
               className="
-                flex flex-row-reverse items-stretch gap-3 
+                flex flex-row-reverse items-stretch gap-3
                 p-2 sm:p-3 lg:p-4
                 bg-white rounded-lg hover:-translate-y-0.5
                 transition-all duration-200 ease-out w-full
               "
             >
-              {/* 🖼️ Image Container (slightly wider than height) */}
+              {/* 🖼️ Image Container */}
               <div
                 className="
                   relative overflow-hidden flex-shrink-0
-                  h-[80px] sm:h-[80px] lg:h-[100px]   /* Wider than height */
-                  aspect-[4/3]                             /* 4:3 aspect ratio */
+                  w-[100px] sm:w-[120px] lg:w-[140px]
+                  aspect-[4/3]
                   rounded-lg shadow-md
                   transition-all duration-300
-                  self-stretch 
+                  self-stretch
                 "
               >
                 <img
@@ -56,7 +56,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                   className="
                     w-full h-full object-cover
                     transform group-hover:scale-105 transition-transform duration-500 ease-out
-                    rounded-lg 
+                    rounded-lg
                   "
                   loading="lazy"
                 />
@@ -67,8 +67,8 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
               <div
                 className="
                   flex-1 flex flex-col justify-start
-                  overflow-visible py-1 sm:py-2
-                  h-[120px] sm:h-auto
+                  py-1 sm:py-2
+                  overflow-visible
                 "
               >
                 {/* 🏷️ Title */}
@@ -76,7 +76,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                   className="
                     text-sm sm:text-base font-semibold text-gray-900
                     group-hover:text-primary-600 group-hover:underline
-                    transition-all duration-300 leading-snug mb-0.5
+                    transition-all duration-300 leading-snug mb-1
                     line-clamp-2
                   "
                 >
@@ -86,7 +86,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                 </h3>
 
                 {/* ✍️ Author */}
-                <p className="text-[11px] sm:text-xs text-gray-500 mt-1">
+                <p className="text-[11px] sm:text-xs text-gray-500">
                   By {article.author}
                 </p>
 
