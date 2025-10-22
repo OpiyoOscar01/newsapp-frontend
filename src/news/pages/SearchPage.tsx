@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { searchArticles, categories } from '../data/mockData';
 import { selectRandomAd } from '../utils/randomAdSelector';
@@ -15,10 +15,16 @@ const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+  
+  // Use ref to prevent infinite loops
+  const isInitialMount = useRef(true);
+  const isInternalUpdate = useRef(false);
+  
+  // Read directly from URL params instead of maintaining separate state
+  const searchQuery = searchParams.get('q') || '';
+  const currentPage = parseInt(searchParams.get('page') || '1');
+  const selectedCategory = searchParams.get('category') || 'all';
   
   const itemsPerPage = 8;
 
@@ -45,44 +51,81 @@ const SearchPage: React.FC = () => {
   }, [searchResults, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    // Load sidebar ad
+    // Load sidebar ad only once
     const sidebar = selectRandomAd('category', 'sidebar');
     setSidebarAd(sidebar);
   }, []);
 
+  // Scroll to top only when search query changes from user action
   useEffect(() => {
-    // Update URL with search parameters
-    const newParams = new URLSearchParams();
-    if (searchQuery) newParams.set('q', searchQuery);
-    if (currentPage > 1) newParams.set('page', currentPage.toString());
-    if (selectedCategory && selectedCategory !== 'all') newParams.set('category', selectedCategory);
-    setSearchParams(newParams);
-  }, [searchQuery, currentPage, selectedCategory, setSearchParams]);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    if (searchQuery && !isInternalUpdate.current) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    isInternalUpdate.current = false;
+  }, [searchQuery]);
+
+  const updateSearchParams = (updates: { q?: string; page?: number; category?: string }) => {
+    isInternalUpdate.current = true;
+    const newParams = new URLSearchParams(searchParams);
+    
+    // Update query
+    if (updates.q !== undefined) {
+      if (updates.q) {
+        newParams.set('q', updates.q);
+      } else {
+        newParams.delete('q');
+      }
+    }
+    
+    // Update page
+    if (updates.page !== undefined) {
+      if (updates.page > 1) {
+        newParams.set('page', updates.page.toString());
+      } else {
+        newParams.delete('page');
+      }
+    }
+    
+    // Update category
+    if (updates.category !== undefined) {
+      if (updates.category && updates.category !== 'all') {
+        newParams.set('category', updates.category);
+      } else {
+        newParams.delete('category');
+      }
+    }
+    
+    setSearchParams(newParams, { replace: true });
+  };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
+    updateSearchParams({ q: query, page: 1 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
+    updateSearchParams({ category, page: 1 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSortChange = (newSortBy: 'date' | 'title' | 'readTime') => {
     setSortBy(newSortBy);
-    setCurrentPage(1);
+    updateSearchParams({ page: 1 });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    updateSearchParams({ page });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleClearSearch = () => {
-    setSearchQuery('');
-    setSelectedCategory('all');
-    setCurrentPage(1);
     navigate('/');
   };
 
@@ -110,13 +153,14 @@ const SearchPage: React.FC = () => {
           {/* Search Controls */}
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
             <div className="space-y-4">
-              {/* Search Bar */}
+              {/* Search Bar - Show button on mobile */}
               <div>
                 <SearchBar
                   onSearch={handleSearch}
                   initialValue={searchQuery}
                   placeholder="Search articles, authors, topics..."
                   className="w-full"
+                  showButton={true}
                 />
               </div>
 
