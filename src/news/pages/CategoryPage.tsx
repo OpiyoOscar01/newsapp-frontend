@@ -226,39 +226,51 @@ const CategoryPage: React.FC = () => {
 
           {/* Articles */}
           {paginatedData.items.length > 0 ? (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {articlesWithAds.map((item, index) => {
-                  if ('clickUrl' in item) {
-                    // It's an ad
-                    return (
-                      <div key={`ad-${item.id}-${index}`} className="md:col-span-2">
-                        <AdBanner ad={item} placement={categorySlug || 'category'} />
-                      </div>
-                    );
-                  } else {
-                    // It's an article
-                    return (
-                      <CompactNewsCard
-                        key={item.id}
-                        article={item}
-                      />
-                    );
-                  }
-                })}
-              </div>
-
-              {/* Pagination */}
-              {paginatedData.totalPages > 1 && (
-                <div className="mt-3">
-                  <Pagination
-                    currentPage={paginatedData.currentPage}
-                    totalPages={paginatedData.totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              )}
+           <div className="space-y-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {articlesWithAds.map((item, index) => {
+      if ("clickUrl" in item) {
+        // It's an ad
+        return (
+          <div key={`ad-${item.id}-${index}`} className="md:col-span-2">
+            <AdBanner ad={item} placement={categorySlug || "category"} />
+          </div>
+        );
+      } else {
+        // It's an article → Show compact on mobile, regular on md+
+        return (
+          <div key={item.id}>
+            {/* Mobile version */}
+            <div className="md:hidden">
+              <CompactNewsCard article={item} />
             </div>
+
+            {/* Desktop version */}
+            <div className="hidden md:block">
+              <NewsCard
+                article={item}
+                variant="compact"
+                showImage={true}
+              />
+            </div>
+          </div>
+        );
+      }
+    })}
+  </div>
+
+  {/* Pagination */}
+  {paginatedData.totalPages > 1 && (
+    <div className="mt-3">
+      <Pagination
+        currentPage={paginatedData.currentPage}
+        totalPages={paginatedData.totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
+  )}
+</div>
+
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
               <div className="mb-4">

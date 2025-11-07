@@ -11,12 +11,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
   if (totalPages <= 1) return null;
 
-  const handleKeyPress = (e: React.KeyboardEvent, pageNumber: number) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onPageChange(pageNumber);
-    }
-  };
+ 
 return (
   <nav
     className="border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-sm"
