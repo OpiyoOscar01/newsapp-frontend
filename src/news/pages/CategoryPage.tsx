@@ -9,6 +9,7 @@ import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
+import CompactNewsCard from '../components/CompactNewsCard';
 
 const CategoryPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
@@ -238,11 +239,9 @@ const CategoryPage: React.FC = () => {
                   } else {
                     // It's an article
                     return (
-                      <NewsCard
+                      <CompactNewsCard
                         key={item.id}
                         article={item}
-                        variant="medium"
-                        showImage={true}
                       />
                     );
                   }
@@ -251,7 +250,7 @@ const CategoryPage: React.FC = () => {
 
               {/* Pagination */}
               {paginatedData.totalPages > 1 && (
-                <div className="mt-12">
+                <div className="mt-3">
                   <Pagination
                     currentPage={paginatedData.currentPage}
                     totalPages={paginatedData.totalPages}
