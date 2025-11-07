@@ -19,8 +19,7 @@ const CategoryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
-  
-  const itemsPerPage = 6;
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('perPage') || '4'));
 
   // Get category information
   const category = categories.find(cat => cat.slug === categorySlug);
@@ -57,12 +56,13 @@ const CategoryPage: React.FC = () => {
   }, [categorySlug]);
 
   useEffect(() => {
-    // Update URL with search and page parameters
+    // Update URL with search, page, and perPage parameters
     const newParams = new URLSearchParams();
     if (searchQuery) newParams.set('search', searchQuery);
     if (currentPage > 1) newParams.set('page', currentPage.toString());
+    if (itemsPerPage !== 4) newParams.set('perPage', itemsPerPage.toString());
     setSearchParams(newParams);
-  }, [searchQuery, currentPage, setSearchParams]);
+  }, [searchQuery, currentPage, itemsPerPage, setSearchParams]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -77,6 +77,11 @@ const CategoryPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   // Create articles with inline ads inserted
@@ -110,46 +115,95 @@ const CategoryPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-3">
           {/* Category Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4 capitalize">
+          <div className="mb-1">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2 capitalize">
               {category.name}
             </h1>
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-lg text-gray-600 mb-1">
               {category.description}
             </p>
             <div className="w-16 h-1 bg-primary-600 rounded"></div>
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="flex-1 max-w-md">
-              <SearchBar
-                onSearch={handleSearch}
-                initialValue={searchQuery}
-                placeholder={`Search in ${category.name}...`}
-              />
+          <div className="flex flex-col gap-4 mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex-1 max-w-md">
+                <SearchBar
+                  onSearch={handleSearch}
+                  initialValue={searchQuery}
+                  placeholder={`Search in ${category.name}...`}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <label htmlFor="sort-select" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Sort by:
+                </label>
+                <select
+                  id="sort-select"
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as 'date' | 'title' | 'readTime')}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="date">Latest</option>
+                  <option value="title">Title A-Z</option>
+                  <option value="readTime">Read Time</option>
+                </select>
+              </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <label htmlFor="sort-select" className="text-sm font-medium text-gray-700">
-                Sort by:
-              </label>
-              <select
-                id="sort-select"
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value as 'date' | 'title' | 'readTime')}
-                className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="date">Latest</option>
-                <option value="title">Title A-Z</option>
-                <option value="readTime">Read Time</option>
-              </select>
-            </div>
+
+            {/* Items per page selector */}
+           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200">
+  {/* Items per page selector */}
+  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+    <label
+      htmlFor="items-per-page"
+      className="text-sm font-medium text-gray-700 whitespace-nowrap"
+    >
+      Articles per page:
+    </label>
+    <select
+      id="items-per-page"
+      value={itemsPerPage}
+      onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-auto"
+    >
+      <option value="4">4 articles</option>
+      <option value="8">8 articles</option>
+      <option value="12">12 articles</option>
+      <option value="20">20 articles</option>
+    </select>
+  </div>
+
+  {/* Results count indicator */}
+  <div className="text-sm text-gray-600 text-center sm:text-right">
+    {filteredAndSortedArticles.length > 0 && (
+      <span>
+        Showing{" "}
+        {Math.min(
+          (currentPage - 1) * itemsPerPage + 1,
+          filteredAndSortedArticles.length
+        )}
+        -
+        {Math.min(
+          currentPage * itemsPerPage,
+          filteredAndSortedArticles.length
+        )}{" "}
+        of{" "}
+        <span className="font-semibold">
+          {filteredAndSortedArticles.length}
+        </span>
+      </span>
+    )}
+  </div>
+</div>
+
           </div>
 
           {/* Results Info */}
@@ -162,7 +216,7 @@ const CategoryPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  Showing <span className="font-semibold">{filteredAndSortedArticles.length}</span> articles 
+                  <span className="font-semibold">{filteredAndSortedArticles.length}</span> total articles 
                   in {category.name}
                 </>
               )}
@@ -207,7 +261,7 @@ const CategoryPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
               <div className="mb-4">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
@@ -223,7 +277,7 @@ const CategoryPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => handleSearch('')}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
                 >
                   Clear search
                 </button>

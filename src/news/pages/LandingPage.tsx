@@ -638,7 +638,7 @@ const LandingPage: React.FC = () => {
               <div className="flex items-center justify-between mb-5 md:mb-6 px-4 sm:px-0">
                 <div>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                    Featured Story
+                    Featured
                   </h2>
                   <div className="w-20 h-1.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-full"></div>
                 </div>

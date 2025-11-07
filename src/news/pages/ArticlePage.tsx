@@ -1,22 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getArticleById, getRelatedArticles, categories } from '../data/mockData';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { formatFullDate } from '../utils/formatDate';
+import { paginate } from '../utils/paginationHelpers';
 import {type Ad } from '../types';
 import ShareButtons from '../components/ShareButtons';
 import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
+import Pagination from '../components/Pagination';
 
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [inlineAds, setInlineAds] = useState<Ad[]>([]);
   const [bottomAd, setBottomAd] = useState<Ad | null>(null);
+  const [relatedPage, setRelatedPage] = useState(parseInt(searchParams.get('relatedPage') || '1'));
+  const [relatedItemsPerPage, setRelatedItemsPerPage] = useState(parseInt(searchParams.get('relatedPerPage') || '2'));
 
   const article = articleId ? getArticleById(articleId) : null;
-  const relatedArticles = article ? getRelatedArticles(article, 3) : [];
+  const allRelatedArticles = article ? getRelatedArticles(article, 12) : []; // Fetch more related articles
   const category = article ? categories.find(cat => cat.slug === article.category) : null;
+
+  // Paginate related articles
+  const paginatedRelatedArticles = useMemo(() => {
+    return paginate(allRelatedArticles, relatedPage, relatedItemsPerPage);
+  }, [allRelatedArticles, relatedPage, relatedItemsPerPage]);
 
   useEffect(() => {
     if (article) {
@@ -34,7 +44,39 @@ const ArticlePage: React.FC = () => {
   useEffect(() => {
     // Scroll to top when article changes
     window.scrollTo(0, 0);
+    // Reset related articles pagination when article changes
+    setRelatedPage(1);
   }, [articleId]);
+
+  useEffect(() => {
+    // Update URL with related articles pagination parameters
+    const newParams = new URLSearchParams(searchParams);
+    if (relatedPage > 1) {
+      newParams.set('relatedPage', relatedPage.toString());
+    } else {
+      newParams.delete('relatedPage');
+    }
+    if (relatedItemsPerPage !== 2) {
+      newParams.set('relatedPerPage', relatedItemsPerPage.toString());
+    } else {
+      newParams.delete('relatedPerPage');
+    }
+    setSearchParams(newParams, { replace: true });
+  }, [relatedPage, relatedItemsPerPage]);
+
+  const handleRelatedPageChange = (page: number) => {
+    setRelatedPage(page);
+    // Scroll to related articles section smoothly
+    const relatedSection = document.getElementById('related-articles-section');
+    if (relatedSection) {
+      relatedSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleRelatedItemsPerPageChange = (newItemsPerPage: number) => {
+    setRelatedItemsPerPage(newItemsPerPage);
+    setRelatedPage(1); // Reset to first page
+  };
 
   if (!article) {
     return (
@@ -206,13 +248,61 @@ const ArticlePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Related Articles */}
-          {relatedArticles.length > 0 && (
-            <RelatedArticles
-              articles={relatedArticles}
-              title="Related Articles"
-              className="mb-12"
-            />
+          {/* Related Articles with Pagination */}
+          {allRelatedArticles.length > 0 && (
+            <div id="related-articles-section" className="mb-12 scroll-mt-24">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Related Articles</h2>
+                
+                {/* Items per page selector for related articles */}
+                {allRelatedArticles.length > 2 && (
+                  <div className="flex items-center space-x-3">
+                    <label htmlFor="related-items-per-page" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      Show:
+                    </label>
+                    <select
+                      id="related-items-per-page"
+                      value={relatedItemsPerPage}
+                      onChange={(e) => handleRelatedItemsPerPageChange(parseInt(e.target.value))}
+                      className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="2">2 articles</option>
+                      <option value="4">4 articles</option>
+                      <option value="6">6 articles</option>
+                      <option value="12">12 articles</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Results info */}
+              {allRelatedArticles.length > relatedItemsPerPage && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    Showing {Math.min((relatedPage - 1) * relatedItemsPerPage + 1, allRelatedArticles.length)}-
+                    {Math.min(relatedPage * relatedItemsPerPage, allRelatedArticles.length)} of{' '}
+                    <span className="font-semibold">{allRelatedArticles.length}</span> related articles
+                  </p>
+                </div>
+              )}
+
+              <RelatedArticles
+                articles={paginatedRelatedArticles.items}
+                title=""
+                className=""
+              />
+
+              {/* Pagination for related articles */}
+              {paginatedRelatedArticles.totalPages > 1 && (
+                <div className="mt-8">
+                  <Pagination
+                    currentPage={paginatedRelatedArticles.currentPage}
+                    totalPages={paginatedRelatedArticles.totalPages}
+                    onPageChange={handleRelatedPageChange}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </article>
 

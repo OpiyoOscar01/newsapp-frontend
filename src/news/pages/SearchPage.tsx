@@ -130,17 +130,17 @@ const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Main Content */}
         <div className="lg:col-span-3">
           {/* Search Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
               Search Results
             </h1>
             {searchQuery && (
-              <p className="text-lg text-gray-600 mb-6">
+              <p className="text-lg text-gray-600 mb-1">
                 Results for "<span className="font-semibold">{searchQuery}</span>"
                 {selectedCategory && selectedCategory !== 'all' && (
                   <> in <span className="font-semibold capitalize">{selectedCategory}</span></>
@@ -151,7 +151,7 @@ const SearchPage: React.FC = () => {
           </div>
 
           {/* Search Controls */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-3">
             <div className="space-y-4">
               {/* Search Bar - Show button on mobile */}
               <div>
