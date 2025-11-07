@@ -138,9 +138,9 @@ const Navbar: React.FC = () => {
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-6">
+              <div className="flex-1 overflow-y-auto px-6 py-2">
                 {/* Search Section */}
-                <div className="mb-8">
+                <div className="mb-2">
                   <label className="block text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
                     Search
                   </label>
@@ -159,7 +159,7 @@ const Navbar: React.FC = () => {
                   <nav className="space-y-1">
                     <Link
                       to="/"
-                      className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
+                      className={`group flex items-center px-4 py-1 rounded-lg text-base font-medium transition-all duration-200 ${
                         isActiveRoute('/')
                           ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
                           : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
@@ -201,7 +201,7 @@ const Navbar: React.FC = () => {
                         <Link
                           key={category.id}
                           to={`/category/${category.slug}`}
-                          className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
+                          className={`group flex items-center px-4 py-1 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
                             isActive
                               ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
@@ -229,7 +229,9 @@ const Navbar: React.FC = () => {
               {/* Footer Section */}
               <div className="px-6 py-4 border-t border-gray-100">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 text-xs">© 2025 DefinePress</span>
+                    <span className="text-gray-500 text-xs">
+                      © {new Date().getFullYear()} DefinePress
+                    </span>
                   <div className="flex items-center space-x-4">
                     <a 
                       href="#" 
