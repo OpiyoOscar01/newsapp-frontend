@@ -138,7 +138,7 @@ const Navbar: React.FC = () => {
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-2">
+              <div className="flex-1 overflow-y-auto px-6 py-1">
                 {/* Search Section */}
                 <div className="mb-2">
                   <label className="block text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
@@ -180,7 +180,7 @@ const Navbar: React.FC = () => {
                     </Link>
 
                     {/* Category Divider */}
-                    <div className="pt-6 pb-2">
+                    <div className="pt-2 pb-2">
                       <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
                         Categories
                       </h3>

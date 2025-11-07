@@ -165,22 +165,6 @@ const ScrollControls: React.FC = () => {
               </button>
             </div>
           )}
-
-          {/* Scroll to Top Button */}
-          <button
-            onClick={scrollToTop}
-            className="p-4 bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-full shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-blue-400/50 group"
-            aria-label="Scroll to top"
-          >
-            <svg
-              className="w-6 h-6 transform group-hover:-translate-y-1 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-          </button>
         </div>
       )}
     </>
