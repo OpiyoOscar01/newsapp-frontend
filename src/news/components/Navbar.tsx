@@ -121,10 +121,9 @@ const Navbar: React.FC = () => {
           <div className="md:hidden fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-2xl animate-slideInRight">
             <div className="flex flex-col h-full">
               {/* Header Section */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center justify-between px-6 py-5">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Menu</h2>
-                  <p className="text-xs text-gray-500 mt-1">Navigate DefinePress</p>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -141,9 +140,7 @@ const Navbar: React.FC = () => {
               <div className="flex-1 overflow-y-auto px-6 py-1">
                 {/* Search Section */}
                 <div className="mb-2">
-                  <label className="block text-xs font-semibold text-gray-900 uppercase tracking-wider mb-3">
-                    Search
-                  </label>
+                  
                   <SearchBar 
                     onSearch={handleSearch} 
                     placeholder="Search news..." 
@@ -153,18 +150,16 @@ const Navbar: React.FC = () => {
 
                 {/* Navigation Links */}
                 <div>
-                  <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider mb-4">
-                    Navigation
-                  </h3>
+               
                   <nav className="space-y-1">
                     <Link
                       to="/"
-                      className={`group flex items-center px-4 py-1 rounded-lg text-base font-medium transition-all duration-200 ${
+                      className={`group flex items-center px-4 mt-6 py-1 rounded-lg text-base font-medium transition-all duration-200 ${
                         isActiveRoute('/')
-                          ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
+                          ? 'text-primary-600 bg-primary-50  text-blue-500'
                           : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
                       }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
+                      onClick={() => setIsMobileMenuOpen(true)}
                     >
                       <svg 
                         className={`w-5 h-5 mr-3 ${
@@ -177,14 +172,7 @@ const Navbar: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                       <span>Home</span>
-                    </Link>
-
-                    {/* Category Divider */}
-                    <div className="pt-2 pb-2">
-                      <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                        Categories
-                      </h3>
-                    </div>
+                    </Link>                  
 
                     {categories.map((category, index) => {
                       const isActive = isActiveRoute(`/category/${category.slug}`);
@@ -201,9 +189,9 @@ const Navbar: React.FC = () => {
                         <Link
                           key={category.id}
                           to={`/category/${category.slug}`}
-                          className={`group flex items-center px-4 py-1 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
+                          className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
                             isActive
-                              ? 'text-primary-600 bg-primary-50 border-l-4 border-primary-600'
+                              ? 'text-primary-600 bg-primary-50 text-blue-500'
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
                           }`}
                           onClick={() => setIsMobileMenuOpen(false)}
