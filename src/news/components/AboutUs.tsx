@@ -5,7 +5,7 @@ const AboutUs: React.FC = () => {
   return (
     <>
      {/* Hero Section - Premium Welcome (FIXED - No Randomization) */}
-      <section className="mb-6 sm:mb-10 md:mb-16 animate-fadeIn mx-6 md:mx-20">
+      <section className="mb-6 mt-6 sm:mb-10 md:mb-16 animate-fadeIn mx-6 md:mx-20">
         <div className="relative bg-gradient-to-br from-gray-900 via-purple-900 to-black rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
           {/* Animated background patterns */}
           <div className="absolute inset-0">
