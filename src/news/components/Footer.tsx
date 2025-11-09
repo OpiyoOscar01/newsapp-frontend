@@ -101,16 +101,16 @@ const Footer: React.FC = () => {
                   Terms of Service
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/advertise" className="text-gray-400 hover:text-primary-400 transition-colors">
                   Advertise With Us
                 </Link>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <Link to="/newsletter" className="text-gray-400 hover:text-primary-400 transition-colors">
                   Newsletter
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
         </div>

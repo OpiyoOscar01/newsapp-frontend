@@ -2,39 +2,28 @@ import React from "react";
 
 const ContactUs: React.FC = () => {
   return (
-    <section className="min-h-screen bg-gray-50 text-gray-800 py-8 px-6 md:px-20">
-      <div className="max-w-4xl mx-auto text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">
+    <section className="min-h-screen bg-gray-50 text-gray-800 py-12 px-6 md:px-20">
+      
+      {/* Header */}
+      <div className="max-w-4xl mx-auto text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900">
           Contact <span className="text-blue-600">DefinePress</span>
         </h1>
-        <p className="text-lg md:text-xl text-gray-600 mb-10">
+        <p className="text-lg md:text-xl text-gray-600">
           We’d love to hear from you! Whether you’re a reader, contributor, or partner, 
           your feedback helps us build a better, more informed world.
         </p>
       </div>
 
       {/* Contact Info Section */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-        <div className="bg-white rounded-2xl shadow p-8 text-center">
+      <div className="max-w-2xl mx-auto flex justify-center mb-16">
+        <div className="bg-white rounded-2xl shadow p-8 text-center w-full md:w-auto transition-transform hover:scale-105">
           <h3 className="text-xl font-semibold text-blue-700 mb-3">Email Us</h3>
           <p className="text-gray-600">info@definepress.com</p>
         </div>
-
-        {/* <div className="bg-white rounded-2xl shadow p-8 text-center">
-          <h3 className="text-xl font-semibold text-blue-700 mb-3">Call Us</h3>
-          <p className="text-gray-600">+256 700 123 456</p>
-        </div> */}
-
-        <div className="bg-white rounded-2xl shadow p-8 text-center">
-          <h3 className="text-xl font-semibold text-blue-700 mb-3">Visit Us</h3>
-          <p className="text-gray-600">
-            DefinePress HQ<br />
-            Kampala, Uganda
-          </p>
-        </div>
       </div>
 
-      {/* Contact Form */}
+      {/* Contact Form Section */}
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-10">
         <h2 className="text-2xl font-semibold mb-6 text-gray-900 text-center">
           Send Us a Message
@@ -85,9 +74,6 @@ const ContactUs: React.FC = () => {
         </form>
       </div>
 
-      <div className="text-center mt-16 text-gray-600">
-        <p>© {new Date().getFullYear()} DefinePress. All rights reserved.</p>
-      </div>
     </section>
   );
 };
