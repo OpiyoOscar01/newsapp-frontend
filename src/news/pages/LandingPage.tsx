@@ -651,9 +651,9 @@ const LandingPage: React.FC = () => {
                     </div>
                     <Link
                       to={`/category/${category.slug}`}
-                      className="group flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold text-sm md:text-base transition-colors"
+                      className="group flex mb-3 text-blue-500 items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold text-sm md:text-base transition-colors"
                     >
-                      <span>View all</span>
+                      <span className=''>Explore all</span>
                       <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                       </svg>
