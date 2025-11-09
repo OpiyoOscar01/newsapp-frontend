@@ -112,10 +112,6 @@ const TermsOfService: React.FC = () => {
           </p>
         </section>
       </div>
-
-      <div className="text-center mt-16 text-gray-600">
-        <p>Effective date: November {new Date().getFullYear()}</p>
-      </div>
     </section>
   );
 };

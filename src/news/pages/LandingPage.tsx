@@ -569,15 +569,15 @@ const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 sm:px-3">
       {/* Featured Article Showcase - Edge-to-edge on mobile */}
       {featuredArticle && (
-        <section className="mb-10 md:mb-16 -mx-4 sm:mx-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 sm:gap-6 lg:gap-8">
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-5 md:mb-6 px-4 sm:px-0">
+        <section className="mb-10 md:mb-12 sm:mb-12 -mx-4 sm:mx-7">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-6 lg:gap-8">
+            <div className="lg:col-span-2 sm:mb-5">
+              <div className="flex items-center justify-between mb-1 md:mb-6 px-4 sm:px-0">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 sm:mb-1">
                     Featured
                   </h2>
                   <div className="w-20 h-1.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-full"></div>
@@ -610,7 +610,7 @@ const LandingPage: React.FC = () => {
       {/* FIXED BANNER AD 1 - Protected from layout randomization */}
       {featuredAds[0] && (
         <section className="mb-10 md:mb-16 relative z-30">
-          <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-1 border-2 border-gray-200">
+          <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg  border-2 border-gray-200">
             <AdBanner ad={featuredAds[0]} placement="landing" />
           </div>
         </section>
