@@ -48,7 +48,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className={`relative ${className}`}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
