@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
@@ -29,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className = '', isLoading = f
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 🆕 Scroll to top when the page (Layout) mounts
+  // Scroll to top when the page (Layout) mounts
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -97,6 +97,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className = '', isLoading = f
 const ScrollControls: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [showQuickNav, setShowQuickNav] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Show controls after scrolling down a bit
   useEffect(() => {
@@ -108,18 +109,38 @@ const ScrollControls: React.FC = () => {
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
+  // 🆕 Handle click outside to close the quick nav menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowQuickNav(false);
+      }
+    };
+
+    // Only add listener when menu is open
+    if (showQuickNav) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showQuickNav]);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowQuickNav(false); // 🆕 Close menu after action
   };
 
   const scrollToBottom = () => {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    setShowQuickNav(false); // 🆕 Close menu after action
   };
 
   return (
     <>
       {isVisible && (
-        <div className="fixed bottom-6 right-6 z-40 flex flex-col space-y-3">
+        <div ref={menuRef} className="fixed bottom-6 right-6 z-40 flex flex-col space-y-3">
           {/* Quick Nav Toggle */}
           <button
             onClick={() => setShowQuickNav(!showQuickNav)}
