@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { dataService } from '../data/dataService'
-import { type Category } from '../types/news'; // Import the Category type
+import { dataService } from '../data/dataService';
+import { type Category } from '../types/news';
 import SearchBar from './SearchBar';
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]); // State for categories
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -16,11 +17,16 @@ const Navbar: React.FC = () => {
     const loadCategories = async () => {
       try {
         setLoading(true);
+        setError(null);
         const categoriesData = await dataService.getCategories();
+        if (categoriesData.length === 0) {
+          setError('No categories available');
+        }
         setCategories(categoriesData);
       } catch (error) {
         console.error('Failed to load categories:', error);
-        setCategories([]); // Fallback to empty array
+        setError('Failed to load navigation');
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -52,6 +58,10 @@ const Navbar: React.FC = () => {
     return location.pathname === path;
   };
 
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -68,6 +78,34 @@ const Navbar: React.FC = () => {
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="h-6 w-20 bg-gray-200 rounded"></div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Show error state
+  if (error && categories.length === 0) {
+    return (
+      <nav className="bg-white shadow-lg sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0">
+              <Link to="/" className="text-2xl font-bold text-gray-800">
+                DefinePress
+              </Link>
+            </div>
+            <div className="hidden md:block">
+              <div className="flex items-center space-x-2 text-sm text-red-600">
+                <span>{error}</span>
+                <button
+                  onClick={handleRetry}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                >
+                  Retry
+                </button>
               </div>
             </div>
           </div>
