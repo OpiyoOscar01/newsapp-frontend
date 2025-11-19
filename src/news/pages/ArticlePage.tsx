@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { getArticleById, getRelatedArticles, categories } from '../data/mockData';
+import { getArticleById, getRelatedArticles, categories } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { formatFullDate } from '../utils/formatDate';
 import { paginate } from '../utils/paginationHelpers';

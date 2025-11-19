@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { searchArticles, categories } from '../data/mockData';
+import { searchArticles, categories } from '../data/dataService';
 import { selectRandomAd } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
 import { sortArticles } from '../utils/filterArticles';

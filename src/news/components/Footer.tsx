@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { categories } from '../data/mockData';
+import { categories } from '../data/dataService';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
