@@ -1,3 +1,4 @@
+// src/components/Navbar.tsx - Update the search functionality
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { dataService } from '../data/dataService';
@@ -48,10 +49,21 @@ const Navbar: React.FC = () => {
   }, [isMobileMenuOpen]);
 
   const handleSearch = (query: string) => {
+    console.log('🔍 Navbar search triggered:', query);
+    
     if (query.trim()) {
+      // Navigate to search page with query
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
-      setIsMobileMenuOpen(false);
+    } else {
+      // If empty query, navigate to search page without query
+      navigate('/search');
     }
+    
+    // Close mobile menu if open
+    setIsMobileMenuOpen(false);
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const isActiveRoute = (path: string) => {
@@ -86,33 +98,7 @@ const Navbar: React.FC = () => {
     );
   }
 
-  // Show error state
-  if (error && categories.length === 0) {
-    return (
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-gray-800">
-                DefinePress
-              </Link>
-            </div>
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-2 text-sm text-red-600">
-                <span>{error}</span>
-                <button
-                  onClick={handleRetry}
-                  className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                >
-                  Retry
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
+  // ... rest of your Navbar component remains the same until the search bar section
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -162,8 +148,12 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:block">
-            <SearchBar onSearch={handleSearch} placeholder="Search news..." showButton={false} />
+          <div className="hidden md:block flex-1 max-w-md mx-8">
+            <SearchBar 
+              onSearch={handleSearch}
+              placeholder="Search articles, topics, authors..."
+              showButton={false}
+            />
           </div>
 
           {/* Mobile menu button */}
@@ -221,10 +211,10 @@ const Navbar: React.FC = () => {
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto pl-10 py-1 w-full">
                 {/* Search Section */}
-                <div className="mb-2">
+                <div className="mb-6 px-4">
                   <SearchBar 
                     onSearch={handleSearch} 
-                    placeholder="Search news..." 
+                    placeholder="Search articles..." 
                     showButton={true}
                   />
                 </div>
@@ -234,9 +224,9 @@ const Navbar: React.FC = () => {
                   <nav className="space-y-1">
                     <Link
                       to="/"
-                      className={`group flex items-center px-4 mt-6 py-1 rounded-lg text-base font-medium transition-all duration-200 ${
+                      className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
                         isActiveRoute('/')
-                          ? 'text-primary-600 bg-primary-50 text-blue-500'
+                          ? 'text-primary-600 bg-primary-50'
                           : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}
@@ -271,7 +261,7 @@ const Navbar: React.FC = () => {
                           to={`/category/${category.slug}`}
                           className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
                             isActive
-                              ? 'text-primary-600 bg-primary-50 text-blue-500'
+                              ? 'text-primary-600 bg-primary-50'
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
                           }`}
                           onClick={() => setIsMobileMenuOpen(false)}
@@ -300,9 +290,6 @@ const Navbar: React.FC = () => {
                   <span className="text-gray-500 text-xs">
                     © {new Date().getFullYear()} DefinePress
                   </span>
-                  <div className="flex items-center space-x-4">
-                    {/* Social icons */}
-                  </div>
                 </div>
               </div>
             </div>

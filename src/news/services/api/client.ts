@@ -1,7 +1,8 @@
 import { type ApiResponse } from '../../types/news';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || '8|o0MM5b8VLbzndqREiW4VJHYG3ThxE554Z9F67q9q8ce7b00e';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '2|IxvPI6yZTo080Agm6ouuuCQcdQpXM6pneRy7kxH1b39043bd';
+
 
 export class ApiError extends Error {
   constructor(

@@ -1,3 +1,4 @@
+// src/AppRoutes.tsx
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from '../components/Layout';
@@ -12,40 +13,38 @@ import PrivacyPolicy from '../components/PrivacyPolicy';
 import AdvertiseWithUs from '../components/AdvertiseWithUs';
 import Newsletter from '../components/NewsLetter';
 import ScrollToTop from '../components/ScrollToTop';
+import AdminDashboard from '../pages/AdminDashboard';
+import AdminLogin from '../pages/AdminLogin';
 
 const AppRoutes: React.FC = () => {
   return (
-    <Layout>
-        {/* 👇 This makes every route start from the top */}
+    <>
       <ScrollToTop />
       <Routes>
-        {/* Landing Page */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Public Routes with Layout */}
+        <Route path="/" element={<Layout><LandingPage /></Layout>} />
+        <Route path="/category/:categorySlug" element={<Layout><CategoryPage /></Layout>} />
+        <Route path="/article/:articleId" element={<Layout><ArticlePage /></Layout>} />
+        <Route path="/search" element={<Layout><SearchPage /></Layout>} />
         
-        {/* Category Pages */}
-        <Route path="/category/:categorySlug" element={<CategoryPage />} />
+        {/* Public Pages with Layout */}
+        <Route path="/about" element={<Layout><AboutUs /></Layout>} />
+        <Route path="/contact" element={<Layout><ContactUs /></Layout>} />
+        <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
+        <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+        <Route path="/advertise" element={<Layout><AdvertiseWithUs /></Layout>} />
+        <Route path="/newsletter" element={<Layout><Newsletter /></Layout>} />
         
-        {/* Individual Article Page */}
-        <Route path="/article/:articleId" element={<ArticlePage />} />
-        
-        {/* Search Results Page */}
-        <Route path="/search" element={<SearchPage />} />
-        
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/advertise" element={<AdvertiseWithUs />} />
-        <Route path="/newsletter" element={<Newsletter />} />
+        {/* Admin Routes (without main layout) */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         
         {/* 404 Page */}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
       </Routes>
-    </Layout>
+    </>
   );
 };
-
-
 
 // 404 Not Found page
 const NotFoundPage: React.FC = () => {

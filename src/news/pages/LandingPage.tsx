@@ -7,7 +7,7 @@ import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import CategoryNavigation from '../components/CategoryNavigation';
-import { LandingPageSkeleton, CategorySectionSkeleton } from '../components/LoadingSkeletons';
+import { LandingPageSkeleton} from '../components/LoadingSkeletons';
 import './styles/landing.css';
 
 const ARTICLES_PER_PAGE = 3;

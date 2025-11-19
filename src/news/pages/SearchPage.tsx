@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+// src/pages/SearchPage.tsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { searchArticles, categories } from '../data/dataService';
+import { searchArticles, getCategories } from '../data/dataService';
 import { selectRandomAd } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
 import { sortArticles } from '../utils/filterArticles';
-import {type Ad } from '../types';
+import { type Ad } from '../types';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
@@ -16,12 +17,10 @@ const SearchPage: React.FC = () => {
   
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  // Use ref to prevent infinite loops
-  const isInitialMount = useRef(true);
-  const isInternalUpdate = useRef(false);
-  
-  // Read directly from URL params instead of maintaining separate state
+  // Read directly from URL params
   const searchQuery = searchParams.get('q') || '';
   const currentPage = parseInt(searchParams.get('page') || '1');
   const selectedCategory = searchParams.get('category') || 'all';
@@ -29,10 +28,54 @@ const SearchPage: React.FC = () => {
   const itemsPerPage = 8;
 
   // Search and filter articles
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    
-    let results = searchArticles(searchQuery);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Load categories and ads
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const cats = await getCategories();
+        setCategories(cats);
+        
+        const sidebar = selectRandomAd('search', 'sidebar');
+        setSidebarAd(sidebar);
+      } catch (error) {
+        console.error('Failed to load initial data:', error);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Perform search when query changes
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+      try {
+        console.log('🔍 Performing search for:', searchQuery);
+        const results = await searchArticles(searchQuery);
+        console.log('✅ Search results:', results);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    performSearch();
+  }, [searchQuery]);
+
+  // Filter and sort results
+  const filteredAndSortedResults = useMemo(() => {
+    let results = searchResults;
     
     // Filter by category if selected
     if (selectedCategory && selectedCategory !== 'all') {
@@ -43,38 +86,16 @@ const SearchPage: React.FC = () => {
     results = sortArticles(results, sortBy);
     
     return results;
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [searchResults, selectedCategory, sortBy]);
 
   // Paginate results
   const paginatedData = useMemo(() => {
-    return paginate(searchResults, currentPage, itemsPerPage);
-  }, [searchResults, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    // Load sidebar ad only once
-    const sidebar = selectRandomAd('category', 'sidebar');
-    setSidebarAd(sidebar);
-  }, []);
-
-  // Scroll to top only when search query changes from user action
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    
-    if (searchQuery && !isInternalUpdate.current) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    isInternalUpdate.current = false;
-  }, [searchQuery]);
+    return paginate(filteredAndSortedResults, currentPage, itemsPerPage);
+  }, [filteredAndSortedResults, currentPage, itemsPerPage]);
 
   const updateSearchParams = (updates: { q?: string; page?: number; category?: string }) => {
-    isInternalUpdate.current = true;
     const newParams = new URLSearchParams(searchParams);
     
-    // Update query
     if (updates.q !== undefined) {
       if (updates.q) {
         newParams.set('q', updates.q);
@@ -83,7 +104,6 @@ const SearchPage: React.FC = () => {
       }
     }
     
-    // Update page
     if (updates.page !== undefined) {
       if (updates.page > 1) {
         newParams.set('page', updates.page.toString());
@@ -92,7 +112,6 @@ const SearchPage: React.FC = () => {
       }
     }
     
-    // Update category
     if (updates.category !== undefined) {
       if (updates.category && updates.category !== 'all') {
         newParams.set('category', updates.category);
@@ -101,11 +120,11 @@ const SearchPage: React.FC = () => {
       }
     }
     
-    setSearchParams(newParams, { replace: true });
+    setSearchParams(newParams);
   };
 
   const handleSearch = (query: string) => {
-    updateSearchParams({ q: query, page: 1 });
+    updateSearchParams({ q: query, page: 1, category: 'all' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -130,17 +149,17 @@ const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-3">
           {/* Search Header */}
-          <div className="mb-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+          <div className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Search Results
             </h1>
             {searchQuery && (
-              <p className="text-lg text-gray-600 mb-1">
+              <p className="text-lg text-gray-600 mb-2">
                 Results for "<span className="font-semibold">{searchQuery}</span>"
                 {selectedCategory && selectedCategory !== 'all' && (
                   <> in <span className="font-semibold capitalize">{selectedCategory}</span></>
@@ -151,16 +170,16 @@ const SearchPage: React.FC = () => {
           </div>
 
           {/* Search Controls */}
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-3">
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 mb-8">
             <div className="space-y-4">
-              {/* Search Bar - Show button on mobile */}
+              {/* Search Bar */}
               <div>
                 <SearchBar
                   onSearch={handleSearch}
                   initialValue={searchQuery}
                   placeholder="Search articles, authors, topics..."
                   className="w-full"
-                  showButton={true}
+                  showButton={false}
                 />
               </div>
 
@@ -205,13 +224,19 @@ const SearchPage: React.FC = () => {
           </div>
 
           {/* Results */}
-          {searchQuery ? (
-            searchResults.length > 0 ? (
+          {searchLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Searching for "{searchQuery}"...</p>
+            </div>
+          ) : searchQuery ? (
+            filteredAndSortedResults.length > 0 ? (
               <div className="space-y-8">
                 {/* Results Count */}
                 <div className="flex items-center justify-between">
                   <p className="text-gray-600">
-                    Found <span className="font-semibold">{searchResults.length}</span> article{searchResults.length !== 1 ? 's' : ''}
+                    Found <span className="font-semibold">{filteredAndSortedResults.length}</span> 
+                    article{filteredAndSortedResults.length !== 1 ? 's' : ''}
                   </p>
                   <button
                     onClick={handleClearSearch}
@@ -295,7 +320,7 @@ const SearchPage: React.FC = () => {
           <div className="sticky top-24 space-y-8">
             {/* Sidebar Ad */}
             {sidebarAd && (
-              <AdBanner ad={sidebarAd} placement="category" />
+              <AdBanner ad={sidebarAd} placement="search" />
             )}
 
             {/* Popular Categories */}
