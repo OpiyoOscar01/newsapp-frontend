@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { getArticleById, getRelatedArticles, categories, recordArticleView } from '../data/dataService';
+import { getArticleById, getRelatedArticles, recordArticleView } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { formatFullDate } from '../utils/formatDate';
 import { paginate } from '../utils/paginationHelpers';
@@ -9,7 +9,7 @@ import ShareButtons from '../components/ShareButtons';
 import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
-import LoadingSkeleton from '../components/LoadingSkeletons';
+import { ArticlePageSkeleton } from '../components/LoadingSkeletons';
 
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -19,21 +19,15 @@ const ArticlePage: React.FC = () => {
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [inlineAds, setInlineAds] = useState<Ad[]>([]);
   const [bottomAd, setBottomAd] = useState<Ad | null>(null);
+  const [relatedPage, setRelatedPage] = useState(parseInt(searchParams.get('relatedPage') || '1'));
+  const [relatedItemsPerPage, setRelatedItemsPerPage] = useState(parseInt(searchParams.get('relatedPerPage') || '2'));
+  
   const [article, setArticle] = useState<any>(null);
   const [allRelatedArticles, setAllRelatedArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [relatedPage, setRelatedPage] = useState(parseInt(searchParams.get('relatedPage') || '1'));
-  const [relatedItemsPerPage, setRelatedItemsPerPage] = useState(parseInt(searchParams.get('relatedPerPage') || '2'));
 
-  const category = article ? categories.find(cat => cat.slug === article.category) : null;
-
-  // Paginate related articles
-  const paginatedRelatedArticles = useMemo(() => {
-    return paginate(allRelatedArticles, relatedPage, relatedItemsPerPage);
-  }, [allRelatedArticles, relatedPage, relatedItemsPerPage]);
-
+  // Load article data
   useEffect(() => {
     const loadArticleData = async () => {
       if (!articleId) {
@@ -46,23 +40,23 @@ const ArticlePage: React.FC = () => {
         setLoading(true);
         setError(null);
         
+        // Load article
         const articleData = await getArticleById(articleId);
         if (!articleData) {
           setError('Article not found');
           setLoading(false);
           return;
         }
-
         setArticle(articleData);
-        
+
         // Record view
         await recordArticleView(articleId);
-        
+
         // Load related articles
         const related = await getRelatedArticles(articleData, 12);
         setAllRelatedArticles(related);
-        
-        // Load ads based on article category and keywords
+
+        // Load ads
         const sidebar = selectRandomAd(articleData.category, 'sidebar');
         const inline = selectMultipleAds('article', 2, 'inline');
         const bottom = selectRandomAd(articleData.category, 'bottom');
@@ -70,10 +64,9 @@ const ArticlePage: React.FC = () => {
         setSidebarAd(sidebar);
         setInlineAds(inline);
         setBottomAd(bottom);
-        
       } catch (err) {
-        console.error('Error loading article:', err);
-        setError('Failed to load article. Please try again later.');
+        console.error('Failed to load article:', err);
+        setError('Failed to load article content');
       } finally {
         setLoading(false);
       }
@@ -81,6 +74,11 @@ const ArticlePage: React.FC = () => {
 
     loadArticleData();
   }, [articleId]);
+
+  // Paginate related articles
+  const paginatedRelatedArticles = useMemo(() => {
+    return paginate(allRelatedArticles, relatedPage, relatedItemsPerPage);
+  }, [allRelatedArticles, relatedPage, relatedItemsPerPage]);
 
   useEffect(() => {
     // Scroll to top when article changes
@@ -118,66 +116,40 @@ const ArticlePage: React.FC = () => {
     setRelatedPage(1);
   };
 
-  const handleBackToHome = () => {
-    navigate('/');
+  const handleRetry = () => {
+    window.location.reload();
   };
 
-  // Error state
-  if (error) {
+  if (loading) {
+    return <ArticlePageSkeleton />;
+  }
+
+  if (error || !article) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
-          <div className="mb-4">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
+          <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Article Not Found</h1>
-          <p className="text-gray-600 mb-8">{error}</p>
+          <p className="text-gray-600 mb-8">{error || 'The requested article does not exist.'}</p>
           <div className="space-x-4">
             <button
-              onClick={handleBackToHome}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
-            >
-              Return to Home
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
+              onClick={handleRetry}
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
             >
               Try Again
             </button>
+            <Link to="/" className="px-4 py-2 text-primary-600 hover:text-primary-700 font-medium">
+              Return to Home
+            </Link>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (loading) {
-    return <LoadingSkeleton type="article" />;
-  }
-
-  if (!article) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Article Not Found</h1>
-          <p className="text-gray-600 mb-8">The requested article does not exist.</p>
-          <button
-            onClick={handleBackToHome}
-            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
-          >
-            Return to Home
-          </button>
         </div>
       </div>
     );
   }
 
   const currentUrl = window.location.href;
-
-  // Split content into paragraphs for ad insertion
   const contentParagraphs = article.content.split('\n\n');
 
   return (
@@ -189,12 +161,7 @@ const ArticlePage: React.FC = () => {
           <nav className="mb-6">
             <ol className="flex items-center space-x-2 text-sm text-gray-500">
               <li>
-                <button
-                  onClick={handleBackToHome}
-                  className="hover:text-primary-600 transition-colors"
-                >
-                  Home
-                </button>
+                <Link to="/" className="hover:text-primary-600">Home</Link>
               </li>
               <li>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -204,9 +171,9 @@ const ArticlePage: React.FC = () => {
               <li>
                 <Link 
                   to={`/category/${article.category}`} 
-                  className="hover:text-primary-600 capitalize transition-colors"
+                  className="hover:text-primary-600 capitalize"
                 >
-                  {category?.name || article.category}
+                  {article.category}
                 </Link>
               </li>
               <li>
@@ -232,7 +199,7 @@ const ArticlePage: React.FC = () => {
                 article.category === 'science' ? 'bg-indigo-100 text-indigo-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
-                {category?.name || article.category}
+                {article.category}
               </span>
             </div>
             
@@ -249,7 +216,7 @@ const ArticlePage: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold text-sm">
-                      {article.author.split(' ').map((n: any[]) => n[0]).join('')}
+                      {article.author.split(' ').map((n: string) => n[0]).join('')}
                     </span>
                   </div>
                   <div>
@@ -290,7 +257,7 @@ const ArticlePage: React.FC = () => {
 
           {/* Article Content */}
           <div className="prose prose-lg max-w-none mb-12">
-            {contentParagraphs.map((paragraph: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined, index: React.Key | null | undefined) => (
+            {contentParagraphs.map((paragraph: string, index: number) => (
               <div key={index}>
                 <p className="text-gray-800 leading-relaxed mb-6 text-lg">
                   {paragraph}
@@ -415,9 +382,9 @@ const ArticlePage: React.FC = () => {
                   <dd className="text-sm text-gray-900 capitalize">
                     <Link 
                       to={`/category/${article.category}`}
-                      className="hover:text-primary-600 transition-colors"
+                      className="hover:text-primary-600"
                     >
-                      {category?.name || article.category}
+                      {article.category}
                     </Link>
                   </dd>
                 </div>
@@ -440,7 +407,7 @@ const ArticlePage: React.FC = () => {
             <div className="bg-primary-50 rounded-lg p-6 border border-primary-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Get the latest {category?.name.toLowerCase() || 'news'} articles delivered to your inbox.
+                Get the latest {article.category} articles delivered to your inbox.
               </p>
               <form className="space-y-3">
                 <input
@@ -455,25 +422,6 @@ const ArticlePage: React.FC = () => {
                   Subscribe
                 </button>
               </form>
-            </div>
-
-            {/* Other Categories */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Explore Other Topics</h3>
-              <div className="space-y-2">
-                {categories
-                  .filter(cat => cat.slug !== article.category)
-                  .slice(0, 5)
-                  .map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/category/${cat.slug}`}
-                      className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors capitalize"
-                    >
-                      {cat.name}
-                    </Link>
-                  ))}
-              </div>
             </div>
           </div>
         </aside>

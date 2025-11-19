@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { categories, getArticlesByCategory } from '../data/dataService';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { getArticlesByCategory, getCategories } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
 import { filterArticlesBySearch, sortArticles } from '../utils/filterArticles';
-import {type Ad,type Article } from '../types';
+import { type Ad, type Article } from '../types';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
 import CompactNewsCard from '../components/CompactNewsCard';
+import { CategoryPageSkeleton } from '../components/LoadingSkeletons';
 
 const CategoryPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [inlineAds, setInlineAds] = useState<Ad[]>([]);
@@ -21,13 +23,59 @@ const CategoryPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('perPage') || '4'));
+  
+  const [category, setCategory] = useState<any>(null);
+  const [allCategoryArticles, setAllCategoryArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get category information
-  const category = categories.find(cat => cat.slug === categorySlug);
-  
+  // Load category data
+  useEffect(() => {
+    const loadCategoryData = async () => {
+      if (!categorySlug) {
+        setError('Category is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Load categories to find the current one
+        const categories = await getCategories();
+        const currentCategory = categories.find(cat => cat.slug === categorySlug);
+        
+        if (!currentCategory) {
+          setError('Category not found');
+          setLoading(false);
+          return;
+        }
+        
+        setCategory(currentCategory);
+
+        // Load articles for this category
+        const articles = await getArticlesByCategory(categorySlug);
+        setAllCategoryArticles(articles);
+
+        // Load ads
+        const sidebar = selectRandomAd(categorySlug, 'sidebar');
+        const inline = selectMultipleAds(categorySlug, 2, 'inline');
+        
+        setSidebarAd(sidebar);
+        setInlineAds(inline);
+      } catch (err) {
+        console.error('Failed to load category:', err);
+        setError('Failed to load category content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategoryData();
+  }, [categorySlug]);
+
   // Get and filter articles
-  const allCategoryArticles = categorySlug ? getArticlesByCategory(categorySlug) : [];
-  
   const filteredAndSortedArticles = useMemo(() => {
     let articles = allCategoryArticles;
     
@@ -48,15 +96,6 @@ const CategoryPage: React.FC = () => {
   }, [filteredAndSortedArticles, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    // Load ads for this category
-    const sidebar = selectRandomAd(categorySlug || 'category', 'sidebar');
-    const inline = selectMultipleAds(categorySlug || 'category', 2, 'inline');
-    
-    setSidebarAd(sidebar);
-    setInlineAds(inline);
-  }, [categorySlug]);
-
-  useEffect(() => {
     // Update URL with search, page, and perPage parameters
     const newParams = new URLSearchParams();
     if (searchQuery) newParams.set('search', searchQuery);
@@ -67,12 +106,12 @@ const CategoryPage: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(1);
   };
 
   const handleSortChange = (newSortBy: 'date' | 'title' | 'readTime') => {
     setSortBy(newSortBy);
-    setCurrentPage(1); // Reset to first page when sorting
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -82,7 +121,11 @@ const CategoryPage: React.FC = () => {
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
+  };
+
+  const handleRetry = () => {
+    window.location.reload();
   };
 
   // Create articles with inline ads inserted
@@ -101,15 +144,33 @@ const CategoryPage: React.FC = () => {
     return items;
   }, [paginatedData.items, inlineAds]);
 
-  if (!category) {
+  if (loading) {
+    return <CategoryPageSkeleton />;
+  }
+
+  if (error || !category) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center">
+          <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Category Not Found</h1>
-          <p className="text-gray-600 mb-8">The requested category does not exist.</p>
-          <a href="/" className="text-primary-600 hover:text-primary-700 font-medium">
-            Return to Home
-          </a>
+          <p className="text-gray-600 mb-8">{error || 'The requested category does not exist.'}</p>
+          <div className="space-x-4">
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="px-4 py-2 text-primary-600 hover:text-primary-700 font-medium"
+            >
+              Return to Home
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -160,51 +221,49 @@ const CategoryPage: React.FC = () => {
             </div>
 
             {/* Items per page selector */}
-           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200">
-  {/* Items per page selector */}
-  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-    <label
-      htmlFor="items-per-page"
-      className="text-sm font-medium text-gray-700 whitespace-nowrap"
-    >
-      Articles per page:
-    </label>
-    <select
-      id="items-per-page"
-      value={itemsPerPage}
-      onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-      className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-auto"
-    >
-      <option value="4">4 articles</option>
-      <option value="8">8 articles</option>
-      <option value="12">12 articles</option>
-      <option value="20">20 articles</option>
-    </select>
-  </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <label
+                  htmlFor="items-per-page"
+                  className="text-sm font-medium text-gray-700 whitespace-nowrap"
+                >
+                  Articles per page:
+                </label>
+                <select
+                  id="items-per-page"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-auto"
+                >
+                  <option value="4">4 articles</option>
+                  <option value="8">8 articles</option>
+                  <option value="12">12 articles</option>
+                  <option value="20">20 articles</option>
+                </select>
+              </div>
 
-  {/* Results count indicator */}
-  <div className="text-sm text-gray-600 text-center sm:text-right">
-    {filteredAndSortedArticles.length > 0 && (
-      <span>
-        Showing{" "}
-        {Math.min(
-          (currentPage - 1) * itemsPerPage + 1,
-          filteredAndSortedArticles.length
-        )}
-        -
-        {Math.min(
-          currentPage * itemsPerPage,
-          filteredAndSortedArticles.length
-        )}{" "}
-        of{" "}
-        <span className="font-semibold">
-          {filteredAndSortedArticles.length}
-        </span>
-      </span>
-    )}
-  </div>
-</div>
-
+              {/* Results count indicator */}
+              <div className="text-sm text-gray-600 text-center sm:text-right">
+                {filteredAndSortedArticles.length > 0 && (
+                  <span>
+                    Showing{" "}
+                    {Math.min(
+                      (currentPage - 1) * itemsPerPage + 1,
+                      filteredAndSortedArticles.length
+                    )}
+                    -
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      filteredAndSortedArticles.length
+                    )}{" "}
+                    of{" "}
+                    <span className="font-semibold">
+                      {filteredAndSortedArticles.length}
+                    </span>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Results Info */}
@@ -226,51 +285,50 @@ const CategoryPage: React.FC = () => {
 
           {/* Articles */}
           {paginatedData.items.length > 0 ? (
-           <div className="space-y-8">
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {articlesWithAds.map((item, index) => {
-      if ("clickUrl" in item) {
-        // It's an ad
-        return (
-          <div key={`ad-${item.id}-${index}`} className="md:col-span-2">
-            <AdBanner ad={item} placement={categorySlug || "category"} />
-          </div>
-        );
-      } else {
-        // It's an article → Show compact on mobile, regular on md+
-        return (
-          <div key={item.id}>
-            {/* Mobile version */}
-            <div className="md:hidden">
-              <CompactNewsCard article={item} />
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {articlesWithAds.map((item, index) => {
+                  if ("clickUrl" in item) {
+                    // It's an ad
+                    return (
+                      <div key={`ad-${item.id}-${index}`} className="md:col-span-2">
+                        <AdBanner ad={item} placement={categorySlug || "category"} />
+                      </div>
+                    );
+                  } else {
+                    // It's an article → Show compact on mobile, regular on md+
+                    return (
+                      <div key={item.id}>
+                        {/* Mobile version */}
+                        <div className="md:hidden">
+                          <CompactNewsCard article={item} />
+                        </div>
+
+                        {/* Desktop version */}
+                        <div className="hidden md:block">
+                          <NewsCard
+                            article={item}
+                            variant="compact"
+                            showImage={true}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
+              </div>
+
+              {/* Pagination */}
+              {paginatedData.totalPages > 1 && (
+                <div className="mt-3">
+                  <Pagination
+                    currentPage={paginatedData.currentPage}
+                    totalPages={paginatedData.totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
+              )}
             </div>
-
-            {/* Desktop version */}
-            <div className="hidden md:block">
-              <NewsCard
-                article={item}
-                variant="compact"
-                showImage={true}
-              />
-            </div>
-          </div>
-        );
-      }
-    })}
-  </div>
-
-  {/* Pagination */}
-  {paginatedData.totalPages > 1 && (
-    <div className="mt-3">
-      <Pagination
-        currentPage={paginatedData.currentPage}
-        totalPages={paginatedData.totalPages}
-        onPageChange={handlePageChange}
-      />
-    </div>
-  )}
-</div>
-
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
               <div className="mb-4">
@@ -309,18 +367,13 @@ const CategoryPage: React.FC = () => {
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Categories</h3>
               <div className="space-y-2">
-                {categories
-                  .filter(cat => cat.slug !== categorySlug)
-                  .slice(0, 5)
-                  .map((cat) => (
-                    <a
-                      key={cat.id}
-                      href={`/category/${cat.slug}`}
-                      className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors capitalize"
-                    >
-                      {cat.name}
-                    </a>
-                  ))}
+                {/* This would need to be populated with other categories */}
+                <button
+                  onClick={() => navigate('/')}
+                  className="block w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors"
+                >
+                  Browse All Categories
+                </button>
               </div>
             </div>
 

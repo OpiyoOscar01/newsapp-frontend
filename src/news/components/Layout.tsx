@@ -29,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className = '', isLoading = f
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Scroll to top when the page (Layout) mountsc
+  // Scroll to top when the page (Layout) mounts
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -91,9 +91,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className = '', isLoading = f
   );
 };
 
-// ------------------------------------------------------------
 // Scroll Controls Component
-// ------------------------------------------------------------
 const ScrollControls: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [showQuickNav, setShowQuickNav] = useState(false);
@@ -109,7 +107,7 @@ const ScrollControls: React.FC = () => {
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
-  // 🆕 Handle click outside to close the quick nav menu
+  // Handle click outside to close the quick nav menu
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -129,12 +127,12 @@ const ScrollControls: React.FC = () => {
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    setShowQuickNav(false); // 🆕 Close menu after action
+    setShowQuickNav(false);
   };
 
   const scrollToBottom = () => {
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-    setShowQuickNav(false); // 🆕 Close menu after action
+    setShowQuickNav(false);
   };
 
   return (
