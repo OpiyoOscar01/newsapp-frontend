@@ -121,8 +121,8 @@ export class ArticleService {
                    apiArticle.summary || 
                    '';
 
-    const tags = this.parseTags(apiArticle.tags, apiArticle.category);
-    const categoryName = apiArticle.category_model?.name || apiArticle.category;
+    const tags = this.parseTags(apiArticle.tags as any, apiArticle.category);
+    // const categoryName = apiArticle.category_model?.name || apiArticle.category;
 
     return {
       id: apiArticle.id.toString(),
