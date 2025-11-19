@@ -1,63 +1,98 @@
 import { apiEndpoints } from '../api/endpoints';
-import { type Article, type ApiArticle,type  ArticleFilters } from '../../types/news';
+import { type Article, type ApiArticle, type ArticleFilters } from '../../types/news';
 
 export class ArticleService {
   async getArticles(filters: ArticleFilters = {}): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.articles.list(filters);
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      const apiArticles = await apiEndpoints.articles.list(filters);
+      return Array.isArray(apiArticles) 
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error('ArticleService.getArticles error:', error);
+      throw error;
+    }
   }
 
   async getArticle(id: string): Promise<Article | null> {
     try {
       const apiArticle = await apiEndpoints.articles.get(id);
-      return this.formatArticle(apiArticle);
+      return apiArticle ? this.formatArticle(apiArticle) : null;
     } catch (error) {
-      console.error('Error fetching article:', error);
+      console.error(`ArticleService.getArticle(${id}) error:`, error);
       return null;
     }
   }
 
   async getLatestArticles(limit: number = 10): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.news.latest(limit);
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      const apiArticles = await apiEndpoints.news.latest(limit);
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error('ArticleService.getLatestArticles error:', error);
+      return [];
+    }
   }
 
   async getTrendingArticles(limit: number = 5): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.news.trending(limit);
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      const apiArticles = await apiEndpoints.news.trending(limit);
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error('ArticleService.getTrendingArticles error:', error);
+      return [];
+    }
   }
 
   async getFeaturedArticles(): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.news.featured();
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      const apiArticles = await apiEndpoints.news.featured();
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error('ArticleService.getFeaturedArticles error:', error);
+      return [];
+    }
   }
 
   async getArticlesByCategory(category: string, limit?: number): Promise<Article[]> {
-  try {
-    const articles = await articleService.getArticlesByCategory(category, limit);
-    return Array.isArray(articles) ? articles : [];
-  } catch (error) {
-    console.error(`Error getting articles for category ${category}:`, error);
-    return [];
-  }
-}
-
-  async getArticlesBySource(source: string, limit?: number): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.news.bySource(source, limit);
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      const apiArticles = await apiEndpoints.news.byCategory(category, limit);
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error(`ArticleService.getArticlesByCategory(${category}) error:`, error);
+      return [];
+    }
   }
 
   async searchArticles(query: string, limit?: number): Promise<Article[]> {
-    const apiArticles = await apiEndpoints.news.search(query, limit);
-    return apiArticles.map(article => this.formatArticle(article));
+    try {
+      if (!query.trim()) return [];
+      const apiArticles = await apiEndpoints.news.search(query, limit);
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article))
+        : [];
+    } catch (error) {
+      console.error(`ArticleService.searchArticles(${query}) error:`, error);
+      return [];
+    }
   }
 
   async getRelatedArticles(articleId: string, limit: number = 3): Promise<Article[]> {
     try {
       const apiArticles = await apiEndpoints.articles.related(articleId);
-      return apiArticles.map(article => this.formatArticle(article)).slice(0, limit);
+      return Array.isArray(apiArticles)
+        ? apiArticles.map(article => this.formatArticle(article)).slice(0, limit)
+        : [];
     } catch (error) {
-      console.error('Error fetching related articles:', error);
+      console.error(`ArticleService.getRelatedArticles(${articleId}) error:`, error);
       return [];
     }
   }
@@ -66,7 +101,8 @@ export class ArticleService {
     try {
       await apiEndpoints.articles.recordView(articleId);
     } catch (error) {
-      console.error('Error recording view:', error);
+      console.error(`ArticleService.recordView(${articleId}) error:`, error);
+      // Don't throw - view recording is non-critical
     }
   }
 
@@ -77,6 +113,7 @@ export class ArticleService {
     const summary = apiArticle.description || 
                    apiArticle.meta_description || 
                    apiArticle.excerpt || 
+                   apiArticle.summary ||
                    this.createSummary(apiArticle.title);
 
     const content = apiArticle.content || 
@@ -85,13 +122,14 @@ export class ArticleService {
                    '';
 
     const tags = this.parseTags(apiArticle.tags, apiArticle.category);
+    const categoryName = apiArticle.category_model?.name || apiArticle.category;
 
     return {
       id: apiArticle.id.toString(),
       title: apiArticle.title,
       summary: summary,
       content: content,
-      author: apiArticle.author || 'Unknown Author',
+      author: apiArticle.author || 'DefinePress Staff',
       publishedAt: apiArticle.published_at,
       imageUrl: apiArticle.image_url || this.getFallbackImage(apiArticle.category),
       category: apiArticle.category,
@@ -104,24 +142,28 @@ export class ArticleService {
     };
   }
 
-  private parseTags(tags: string | null, category: string): string[] {
-    if (!tags) {
-      return [category];
-    }
+  private parseTags(tags: string | string[] | null, category: string): string[] {
+    if (!tags) return [category];
 
     try {
       if (typeof tags === 'string') {
-        const parsed = JSON.parse(tags);
-        return Array.isArray(parsed) ? parsed : [category];
+        // Try parsing as JSON first
+        try {
+          const parsed = JSON.parse(tags);
+          return Array.isArray(parsed) ? parsed : [category];
+        } catch {
+          // Parse as comma-separated string
+          return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        }
       }
       return Array.isArray(tags) ? tags : [category];
     } catch {
-      return tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      return [category];
     }
   }
 
   private createSummary(title: string): string {
-    return `${title}. Read more for the full story.`;
+    return `${title}. Read more for the full story and latest updates.`;
   }
 
   private getFallbackImage(category: string): string {
@@ -131,11 +173,12 @@ export class ArticleService {
       'technology': 'https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg',
       'sports': 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
       'health': 'https://images.pexels.com/photos/40568/medical-appointment-doctor-healthcare-40568.jpeg',
-      'science': 'https://images.pexels.com/photos-256262/pexels-photo-256262.jpeg',
+      'science': 'https://images.pexels.com/photos/256262/pexels-photo-256262.jpeg',
+      'entertainment': 'https://images.pexels.com/photos/1299391/pexels-photo-1299391.jpeg',
       'general': 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg',
     };
 
-    return fallbackImages[category] || 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg';
+    return fallbackImages[category] || fallbackImages['general'];
   }
 }
 

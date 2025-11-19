@@ -1,46 +1,55 @@
-// Base API Response
+// API Response Types
 export interface ApiResponse<T> {
   success: boolean;
-  message: string;
   data: T;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
-  links: {
-    first: string;
-    last: string;
-    prev: string | null;
-    next: string | null;
+  message?: string;
+  meta?: {
+    current_page?: number;
+    last_page?: number;
+    per_page?: number;
+    total?: number;
   };
 }
 
-// Category Types
-export interface Category {
-  id: string;
-  name: string;
+export interface ApiArticle {
+  id: number;
+  title: string;
   slug: string;
-  description: string;
-  color: string;
-  articleCount?: number;
-  isActive?: boolean;
+  summary?: string;
+  description?: string;
+  meta_description?: string;
+  excerpt?: string;
+  content?: string;
+  author?: string;
+  published_at: string;
+  image_url?: string;
+  category: string;
+  category_model?: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+  tags?: string | string[] | null;
+  url?: string;
+  source?: string;
+  view_count?: number;
+  is_featured?: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ApiCategory {
   id: number;
-  slug: string;
   name: string;
-  description: string;
+  slug: string;
+  description?: string;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Article Types
+// Frontend Types
 export interface Article {
   id: string;
   title: string;
@@ -58,53 +67,40 @@ export interface Article {
   isFeatured?: boolean;
 }
 
-export interface ApiArticle {
-  id: number;
-  title: string;
-  description: string | null;
-  content: string | null;
-  author: string | null;
-  url: string;
-  source: string | null;
-  image_url: string | null;
-  category: string;
-  language: string | null;
-  country: string | null;
-  published_at: string;
-  is_active: boolean;
-  is_featured: boolean;
-  view_count: number;
-  sentiment_score: number | null;
-  tags: string | null;
-  keywords: string | null;
+export interface Category {
+  id: string;
+  name: string;
   slug: string;
-  meta_description: string | null;
-  reading_time: number;
-  excerpt: string | null;
-  created_at: string;
-  updated_at: string;
-  category_model?: ApiCategory;
-  source_model?: any;
-  summary?:string
+  description: string;
+  color: string;
+  articleCount?: number;
+  isActive?: boolean;
 }
 
-// Service Types
 export interface ArticleFilters {
   category?: string;
-  source?: string;
-  search?: string;
+  limit?: number;
   page?: number;
   perPage?: number;
-  featured?: boolean;
-  trending?: boolean;
-  limit?: number;
-  sortBy?:string;
-  order?:string;
+  sortBy?: 'publishedAt' | 'title' | 'viewCount';
+  order?: 'asc' | 'desc';
+  search?: string;
 }
 
-export interface NewsStats {
-  totalArticles: number;
-  totalCategories: number;
-  trendingCount: number;
-  featuredCount: number;
+export interface Ad {
+  id: string;
+  title: string;
+  imageUrl: string;
+  clickUrl: string;
+  placement: string;
+}
+
+// Loading States
+export interface LoadingState {
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface DataState<T> extends LoadingState {
+  data: T | null;
 }

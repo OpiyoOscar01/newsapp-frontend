@@ -1,27 +1,26 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { categories, getArticlesByCategory, getFeaturedArticles } from '../data/dataService';
+import { dataService } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
-import { type Ad, type Article } from '../types';
+import { type Ad, type Article, type Category } from '../types';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import CategoryNavigation from '../components/CategoryNavigation';
+import { LandingPageSkeleton, CategorySectionSkeleton } from '../components/LoadingSkeletons';
 import './styles/landing.css';
 
-const ARTICLES_PER_PAGE = 3; // Show 3 articles after the first one
+const ARTICLES_PER_PAGE = 3;
 
 const LandingPage: React.FC = () => {
   const [featuredAds, setFeaturedAds] = useState<Ad[]>([]);
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [categoryArticles, setCategoryArticles] = useState<Map<string, Article[]>>(new Map());
+  const [categories, setCategories] = useState<Category[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Pagination state for each category
+  const [error, setError] = useState<string | null>(null);
   const [currentPages, setCurrentPages] = useState<Map<string, number>>(new Map());
-  
-  // Category navigation state
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
 
   // Generate random layout order
@@ -39,88 +38,91 @@ const LandingPage: React.FC = () => {
       'visual-mosaic'
     ];
     
-    const shuffled = [...layouts];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    
-    return shuffled;
+    return layouts.sort(() => Math.random() - 0.5);
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        
-        // Load ads
-        const bannerAds = selectMultipleAds('landing', 2, 'banner');
-        const sidebar = selectRandomAd('landing', 'sidebar');
-        setFeaturedAds(bannerAds);
-        setSidebarAd(sidebar);
-
-        // Load featured article
-        try {
-          const featured = await getFeaturedArticles();
-          if (featured && featured.length > 0) {
-            setFeaturedArticle(featured[0]);
-          }
-        } catch (error) {
-          console.error('Failed to load featured article:', error);
-        }
-
-        // Load articles for each category
-        const articlesMap = new Map();
-        const pagesMap = new Map();
-        
-        for (const category of categories) {
-          try {
-            // Load more articles to support pagination
-            const articles = await getArticlesByCategory(category.slug, 20); // Load more for pagination
-            articlesMap.set(category.slug, Array.isArray(articles) ? articles : []);
-            pagesMap.set(category.slug, 1); // Start each category at page 1
-          } catch (error) {
-            console.error(`Failed to load articles for category ${category.slug}:`, error);
-            articlesMap.set(category.slug, []);
-            pagesMap.set(category.slug, 1);
-          }
-        }
-        
-        setCategoryArticles(articlesMap);
-        setCurrentPages(pagesMap);
-      } catch (error) {
-        console.error('Failed to load landing page data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
-  // Handle page change for a specific category
-  const handlePageChange = (categorySlug: string, page: number) => {
-    setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Load ads (non-blocking)
+      const bannerAds = selectMultipleAds('landing', 2, 'banner');
+      const sidebar = selectRandomAd('landing', 'sidebar');
+      setFeaturedAds(bannerAds);
+      setSidebarAd(sidebar);
+
+      // Load categories first
+      const categoriesData = await dataService.getCategories();
+      if (!categoriesData || categoriesData.length === 0) {
+        throw new Error('No categories available');
+      }
+      setCategories(categoriesData);
+
+      // Load featured article
+      try {
+        const featured = await dataService.getFeaturedArticles();
+        if (featured && featured.length > 0) {
+          setFeaturedArticle(featured[0]);
+        }
+      } catch (err) {
+        console.warn('Failed to load featured article:', err);
+      }
+
+      // Load articles for each category
+      const articlesMap = new Map<string, Article[]>();
+      const pagesMap = new Map<string, number>();
+      
+      await Promise.all(
+        categoriesData.map(async (category) => {
+          try {
+            const articles = await dataService.getArticlesByCategory(category.slug, 20);
+            articlesMap.set(category.slug, articles);
+            pagesMap.set(category.slug, 1);
+          } catch (err) {
+            console.error(`Failed to load articles for ${category.slug}:`, err);
+            articlesMap.set(category.slug, []);
+            pagesMap.set(category.slug, 1);
+          }
+        })
+      );
+      
+      setCategoryArticles(articlesMap);
+      setCurrentPages(pagesMap);
+    } catch (err) {
+      console.error('Failed to load landing page data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load content');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Handle category navigation
+  const handlePageChange = (categorySlug: string, page: number) => {
+    setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
+    const categoryElement = document.querySelector(`[data-category="${categorySlug}"]`);
+    if (categoryElement) {
+      categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleCategoryChange = (index: number) => {
     setCurrentCategoryIndex(index);
-    // Scroll to the category section
     const categoryElement = document.querySelector(`[data-category="${categories[index].slug}"]`);
     if (categoryElement) {
       categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  // Get paginated articles for a category
   const getPaginatedArticles = (categorySlug: string): Article[] => {
     const articles = categoryArticles.get(categorySlug) || [];
     const currentPage = currentPages.get(categorySlug) || 1;
     
     if (articles.length <= 1) return articles;
     
-    // First article is always shown, then paginate the rest
     const firstArticle = articles[0];
     const remainingArticles = articles.slice(1);
     
@@ -131,7 +133,6 @@ const LandingPage: React.FC = () => {
     return [firstArticle, ...paginatedRemaining];
   };
 
-  // Calculate total pages for a category
   const getTotalPages = (categorySlug: string): number => {
     const articles = categoryArticles.get(categorySlug) || [];
     if (articles.length <= 1) return 1;
@@ -140,77 +141,21 @@ const LandingPage: React.FC = () => {
     return Math.ceil(remainingArticles / ARTICLES_PER_PAGE);
   };
 
-  // Dynamic layout configuration
   const getLayoutConfig = (index: number) => {
     const layoutName = randomLayoutOrder[index % randomLayoutOrder.length];
-    
-    const layoutMap: { [key: string]: any } = {
-      'hero-asymmetric': {
-        name: 'hero-asymmetric',
-        description: 'Prominent hero story with secondary cards arranged asymmetrically.'
-      },
-      'wide-triple': {
-        name: 'wide-triple',
-        description: 'A cinematic wide headline article followed by a balanced three-column flow.'
-      },
-      'magazine-sidebar': {
-        name: 'magazine-sidebar',
-        description: 'Editorial-style grid with visual hierarchy and an adaptive sidebar for trending topics.'
-      },
-      'masonry-stack': {
-        name: 'masonry-stack',
-        description: 'Pinterest-inspired card stacking for high visual variation and content depth.'
-      },
-      'spotlight-flow': {
-        name: 'spotlight-flow',
-        description: 'Highlight key articles with spotlight emphasis and grid-based secondary flow.'
-      },
-      'alternating-media-text': {
-        name: 'alternating-media-text',
-        description: 'Visually rhythmic layout alternating image positions for a storytelling vibe.'
-      },
-      'carousel-grid': {
-        name: 'carousel-grid',
-        description: 'Horizontal swipeable carousel on mobile, expanding into a multi-row grid on desktop.'
-      },
-      'editorial-split': {
-        name: 'editorial-split',
-        description: 'Newspaper-style split view with a pull quote or featured text area to break repetition.'
-      },
-      'timeline-feed': {
-        name: 'timeline-feed',
-        description: 'Chronological feed emphasizing publication dates and linear storytelling.'
-      },
-      'visual-mosaic': {
-        name: 'visual-mosaic',
-        description: 'Highly visual, image-dominant layout resembling a photo journal or artboard.'
-      }
-    };
-
-    return layoutMap[layoutName];
+    return { name: layoutName };
   };
 
-  // Safe article destructuring
-  const getArticlesForLayout = (articles: Article[]) => {
-    if (!Array.isArray(articles) || articles.length === 0) {
-      return { firstArticle: null, secondArticle: null, remainingArticles: [] };
-    }
-    
-    const [firstArticle, secondArticle, ...remainingArticles] = articles;
-    return { firstArticle, secondArticle, remainingArticles };
-  };
-
-  // Render layout component
   const renderCategoryLayout = (layoutConfig: any, articles: Article[]) => {
-    const { firstArticle, secondArticle, remainingArticles } = getArticlesForLayout(articles);
-    
-    if (!firstArticle) {
+    if (!articles || articles.length === 0) {
       return (
         <div className="text-center py-8 text-gray-500">
           No articles available for this category.
         </div>
       );
     }
+
+    const [firstArticle, secondArticle, ...remainingArticles] = articles;
 
     switch(layoutConfig.name) {
       case 'hero-asymmetric':
@@ -292,7 +237,6 @@ const LandingPage: React.FC = () => {
         );
 
       default:
-        // Default layout
         return (
           <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
             <div className="lg:col-span-2">
@@ -332,35 +276,25 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // Loading state
   if (loading) {
+    return <LandingPageSkeleton />;
+  }
+
+  if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="animate-pulse">
-          {/* Featured section skeleton */}
-          <div className="mb-10 md:mb-12 -mx-4 sm:mx-7">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-6 lg:gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-                <div className="h-96 bg-gray-200 rounded"></div>
-              </div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-          
-          {/* Categories skeleton */}
-          <div className="space-y-10 md:space-y-20">
-            {categories.map((category, index) => (
-              <div key={category.id} className="space-y-4">
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-48 bg-gray-200 rounded"></div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="mt-4 text-lg font-medium text-gray-900">Failed to Load Content</h3>
+          <p className="mt-2 text-sm text-gray-500">{error}</p>
+          <button
+            onClick={loadData}
+            className="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -391,16 +325,15 @@ const LandingPage: React.FC = () => {
               />
             </div>
             
-            {/* Sidebar Ad */}
-            <div className="px-4 sm:px-0">
-              {sidebarAd && (
+            {sidebarAd && (
+              <div className="px-4 sm:px-0">
                 <div className="sticky top-24">
                   <div className="bg-gray-50 rounded-lg p-1 border-2 border-gray-200">
                     <AdBanner ad={sidebarAd} placement="landing" />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -443,7 +376,6 @@ const LandingPage: React.FC = () => {
                 data-category={category.slug}
               >
                 <div className="w-full">
-                  {/* Category Header */}
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
@@ -467,12 +399,10 @@ const LandingPage: React.FC = () => {
                     </Link>
                   </div>
 
-                  {/* Category Content */}
                   <div className="w-full mb-8">
                     {renderCategoryLayout(layoutConfig, paginatedArticles)}
                   </div>
 
-                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex justify-center mt-8">
                       <Pagination
@@ -485,7 +415,6 @@ const LandingPage: React.FC = () => {
                 </div>
               </section>
 
-              {/* Banner Ad 2 after 3rd category */}
               {categoryIndex === 2 && featuredAds[1] && (
                 <section className="w-full my-10 md:my-12">
                   <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-1 border-2 border-gray-200">

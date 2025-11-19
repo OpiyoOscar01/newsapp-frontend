@@ -29,7 +29,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className = '', isLoading = f
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Scroll to top when the page (Layout) mounts
+  // Scroll to top when the page (Layout) mountsc
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

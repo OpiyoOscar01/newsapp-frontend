@@ -3,79 +3,17 @@ import { categoryService } from '../services/news/categoryService';
 import { articleService } from '../services/news/articleService';
 
 /**
- * DataService - Safe, non-recursive data layer with caching
+ * DataService - Main data access layer with caching and error handling
  */
 class DataService {
   private static instance: DataService | null = null;
 
-  // Caches
+  // Caches with TTL
   private categoriesCache: { data: Category[]; fetchedAt: number } | null = null;
   private articlesCache: Map<string, { data: Article[]; fetchedAt: number }> = new Map();
 
   // Cache TTL (5 minutes)
   private readonly DEFAULT_TTL = 1000 * 60 * 5;
-
-  // Static fallback categories
-  private staticCategories: Category[] = [
-    { id: '1', name: 'General', slug: 'general', description: 'General news and current events', color: 'bg-gray-500' },
-    { id: '2', name: 'Technology', slug: 'technology', description: 'Latest in tech and innovation', color: 'bg-blue-500' },
-    { id: '3', name: 'Business', slug: 'business', description: 'Financial markets and business news', color: 'bg-green-500' },
-    { id: '4', name: 'Sports', slug: 'sports', description: 'Sports news and updates', color: 'bg-orange-500' },
-    { id: '5', name: 'Health', slug: 'health', description: 'Health and wellness news', color: 'bg-purple-500' },
-    { id: '6', name: 'Science', slug: 'science', description: 'Scientific discoveries and research', color: 'bg-indigo-500' }
-  ];
-
-  // Mock articles for fallback/demo
-  private mockArticles: Article[] = [
-    {
-      id: '1',
-      title: 'The Future of Artificial Intelligence in 2024',
-      summary: 'Exploring the latest advancements in AI and machine learning that are shaping our future.',
-      content: 'Artificial intelligence continues to evolve at an unprecedented pace. New breakthroughs in machine learning algorithms and neural networks are enabling applications we could only dream of a few years ago.',
-      author: 'Tech Insights',
-      publishedAt: new Date().toISOString(),
-      imageUrl: 'https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg',
-      category: 'technology',
-      readTime: 4,
-      tags: ['AI', 'Machine Learning', 'Technology']
-    },
-    {
-      id: '2',
-      title: 'Global Markets Show Strong Recovery Signs',
-      summary: 'Economic indicators point towards sustained growth in major markets worldwide.',
-      content: 'Financial markets around the world are showing promising signs of recovery as economic indicators improve and investor confidence returns.',
-      author: 'Financial Times',
-      publishedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      imageUrl: 'https://images.pexels.com/photos/210607/pexels-photo-210607.jpeg',
-      category: 'business',
-      readTime: 3,
-      tags: ['Markets', 'Economy', 'Finance']
-    },
-    {
-      id: '3',
-      title: 'Championship Finals Set After Thrilling Semis',
-      summary: 'Underdog team advances to finals in stunning upset victory that shocked fans.',
-      content: 'In a dramatic turn of events, the underdog team secured their spot in the championship finals with a performance that will be remembered for years to come.',
-      author: 'Sports Network',
-      publishedAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      imageUrl: 'https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg',
-      category: 'sports',
-      readTime: 2,
-      tags: ['Championship', 'Sports', 'Victory']
-    },
-    {
-      id: '4',
-      title: 'Breakthrough in Renewable Energy Storage',
-      summary: 'New battery technology promises to revolutionize how we store solar and wind energy.',
-      content: 'Scientists have developed a new battery technology that could solve one of renewable energy\'s biggest challenges: reliable storage for times when the sun isn\'t shining and the wind isn\'t blowing.',
-      author: 'Science Daily',
-      publishedAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      imageUrl: 'https://images.pexels.com/photos/256262/pexels-photo-256262.jpeg',
-      category: 'science',
-      readTime: 5,
-      tags: ['Energy', 'Innovation', 'Research']
-    }
-  ];
 
   private constructor() {}
 
@@ -93,6 +31,7 @@ class DataService {
   async getCategories(options?: { forceRefresh?: boolean }): Promise<Category[]> {
     const force = options?.forceRefresh ?? false;
 
+    // Return cached data if valid
     if (!force && this.categoriesCache) {
       const age = Date.now() - this.categoriesCache.fetchedAt;
       if (age < this.DEFAULT_TTL) {
@@ -101,39 +40,39 @@ class DataService {
     }
 
     try {
-      const cats = await categoryService.getCategories();
-      const safeCats = Array.isArray(cats) && cats.length > 0 ? cats : this.staticCategories;
-      this.categoriesCache = { data: safeCats, fetchedAt: Date.now() };
-      return safeCats;
+      const categories = await categoryService.getCategories();
+      this.categoriesCache = { data: categories, fetchedAt: Date.now() };
+      return categories;
     } catch (err) {
-      console.error('DataService.getCategories: failed to fetch categories, using fallback', err);
+      console.error('DataService.getCategories: failed to fetch', err);
+      // Return cached data if available
       if (this.categoriesCache) return this.categoriesCache.data;
-      return this.staticCategories;
+      // Return empty array as last resort
+      return [];
     }
   }
 
   getCategoriesSync(): Category[] {
-    try {
-      if (this.categoriesCache) return this.categoriesCache.data;
-      return this.staticCategories;
-    } catch (err) {
-      console.error('DataService.getCategoriesSync: unexpected error', err);
-      return this.staticCategories;
-    }
+    return this.categoriesCache?.data || [];
   }
 
-  async getCategory(slug: string): Promise<Category | undefined> {
-    const cats = await this.getCategories();
-    return cats.find((c) => c.slug === slug);
+  async getCategory(slug: string): Promise<Category | null> {
+    try {
+      const categories = await this.getCategories();
+      return categories.find(c => c.slug === slug) || null;
+    } catch (err) {
+      console.error(`DataService.getCategory(${slug}) failed`, err);
+      return null;
+    }
   }
 
   async getPopularCategories(limit: number = 6): Promise<Category[]> {
     try {
-      const cats = await this.getCategories();
-      return cats.slice(0, limit);
+      return await categoryService.getPopularCategories(limit);
     } catch (err) {
       console.error('DataService.getPopularCategories failed', err);
-      return this.staticCategories.slice(0, limit);
+      const categories = await this.getCategories();
+      return categories.slice(0, limit);
     }
   }
 
@@ -145,6 +84,7 @@ class DataService {
     const cacheKey = this.generateCacheKey('articles', filters);
     const force = options?.forceRefresh ?? false;
 
+    // Return cached data if valid
     const cached = this.articlesCache.get(cacheKey);
     if (!force && cached && Date.now() - cached.fetchedAt < this.DEFAULT_TTL) {
       return cached.data;
@@ -152,47 +92,68 @@ class DataService {
 
     try {
       const articles = await articleService.getArticles(filters);
-      const normalized = Array.isArray(articles) ? articles : [];
-      this.articlesCache.set(cacheKey, { data: normalized, fetchedAt: Date.now() });
-      return normalized;
+      this.articlesCache.set(cacheKey, { data: articles, fetchedAt: Date.now() });
+      return articles;
     } catch (err) {
-      console.error('DataService.getArticles: failed to fetch, using fallback', err);
-      
-      // Return mock articles as fallback filtered by category if specified
-      if (filters.category) {
-        return this.mockArticles.filter(article => article.category === filters.category).slice(0, filters.limit || 10);
-      }
-      
+      console.error('DataService.getArticles: failed to fetch', err);
+      // Return cached data if available
       if (cached) return cached.data;
-      return this.mockArticles.slice(0, filters.limit || 10);
+      return [];
     }
   }
 
   async getArticleById(id: string): Promise<Article | null> {
     try {
-      const art = await articleService.getArticle(id);
-      return art ?? null;
+      return await articleService.getArticle(id);
     } catch (err) {
       console.error(`DataService.getArticleById(${id}) failed`, err);
-      // Return mock article as fallback
-      return this.mockArticles.find(article => article.id === id) || null;
+      return null;
     }
   }
 
   async getArticlesByCategory(category: string, limit?: number, options?: { forceRefresh?: boolean }): Promise<Article[]> {
-    const filters: ArticleFilters = { category, limit };
-    return this.getArticles(filters, options);
+    const cacheKey = this.generateCacheKey('category', { category, limit });
+    const force = options?.forceRefresh ?? false;
+
+    const cached = this.articlesCache.get(cacheKey);
+    if (!force && cached && Date.now() - cached.fetchedAt < this.DEFAULT_TTL) {
+      return cached.data;
+    }
+
+    try {
+      const articles = await articleService.getArticlesByCategory(category, limit);
+      this.articlesCache.set(cacheKey, { data: articles, fetchedAt: Date.now() });
+      return articles;
+    } catch (err) {
+      console.error(`DataService.getArticlesByCategory(${category}) failed`, err);
+      if (cached) return cached.data;
+      return [];
+    }
   }
 
   async getLatestArticles(limit: number = 10, options?: { forceRefresh?: boolean }): Promise<Article[]> {
-    const filters: ArticleFilters = { limit, sortBy: 'publishedAt', order: 'desc' };
-    return this.getArticles(filters, options);
+    const cacheKey = this.generateCacheKey('latest', { limit });
+    const force = options?.forceRefresh ?? false;
+
+    const cached = this.articlesCache.get(cacheKey);
+    if (!force && cached && Date.now() - cached.fetchedAt < this.DEFAULT_TTL) {
+      return cached.data;
+    }
+
+    try {
+      const articles = await articleService.getLatestArticles(limit);
+      this.articlesCache.set(cacheKey, { data: articles, fetchedAt: Date.now() });
+      return articles;
+    } catch (err) {
+      console.error('DataService.getLatestArticles failed', err);
+      if (cached) return cached.data;
+      return [];
+    }
   }
 
   async getTrendingArticles(limit: number = 5): Promise<Article[]> {
     try {
-      const arts = await articleService.getTrendingArticles(limit);
-      return Array.isArray(arts) ? arts : [];
+      return await articleService.getTrendingArticles(limit);
     } catch (err) {
       console.error('DataService.getTrendingArticles failed', err);
       return this.getLatestArticles(limit);
@@ -201,36 +162,38 @@ class DataService {
 
   async getFeaturedArticles(): Promise<Article[]> {
     try {
-      const arts = await articleService.getFeaturedArticles();
-      return Array.isArray(arts) ? arts : [];
+      return await articleService.getFeaturedArticles();
     } catch (err) {
       console.error('DataService.getFeaturedArticles failed', err);
-      return this.mockArticles.filter(article => article.category === 'technology').slice(0, 3);
+      return this.getLatestArticles(3);
     }
   }
 
   async searchArticles(query: string): Promise<Article[]> {
+    if (!query.trim()) return [];
+    
     try {
-      const arts = await articleService.searchArticles(query);
-      return Array.isArray(arts) ? arts : [];
+      return await articleService.searchArticles(query);
     } catch (err) {
-      console.error('DataService.searchArticles failed', err);
-      return this.mockArticles.filter(article => 
-        article.title.toLowerCase().includes(query.toLowerCase()) ||
-        article.summary.toLowerCase().includes(query.toLowerCase())
-      );
+      console.error(`DataService.searchArticles(${query}) failed`, err);
+      return [];
     }
   }
 
   async getRelatedArticles(currentArticle: Article, limit: number = 3): Promise<Article[]> {
     try {
-      const arts = await articleService.getRelatedArticles(currentArticle.id, limit);
-      return Array.isArray(arts) ? arts : [];
+      const related = await articleService.getRelatedArticles(currentArticle.id, limit);
+      
+      // If no related articles, fallback to same category
+      if (related.length === 0) {
+        const categoryArticles = await this.getArticlesByCategory(currentArticle.category, limit + 1);
+        return categoryArticles.filter(a => a.id !== currentArticle.id).slice(0, limit);
+      }
+      
+      return related;
     } catch (err) {
-      console.error('DataService.getRelatedArticles failed', err);
-      return this.mockArticles
-        .filter(article => article.id !== currentArticle.id && article.category === currentArticle.category)
-        .slice(0, limit);
+      console.error(`DataService.getRelatedArticles(${currentArticle.id}) failed`, err);
+      return [];
     }
   }
 
@@ -256,11 +219,16 @@ class DataService {
     this.articlesCache.delete(key);
   }
 
+  invalidateCategoryCache(category: string): void {
+    const keys = Array.from(this.articlesCache.keys()).filter(k => k.includes(`category=${category}`));
+    keys.forEach(key => this.articlesCache.delete(key));
+  }
+
   // ----------------------
   // Utilities
   // ----------------------
 
-  private generateCacheKey(prefix: string, filters: ArticleFilters = {}): string {
+  private generateCacheKey(prefix: string, filters: Record<string, any> = {}): string {
     const params = Object.entries(filters)
       .filter(([_, v]) => v !== undefined && v !== null && v !== '')
       .map(([k, v]) => `${k}=${String(v)}`)
@@ -272,9 +240,6 @@ class DataService {
 
 // Singleton instance
 export const dataService = DataService.getInstance();
-
-// Synchronous categories export for immediate use
-export const categories = dataService.getCategoriesSync();
 
 // Named exports for compatibility
 export const getArticlesByCategory = (category: string, limit?: number) => 
@@ -299,5 +264,8 @@ export const getTrendingArticles = (limit?: number) => dataService.getTrendingAr
 export const getFeaturedArticles = () => dataService.getFeaturedArticles();
 export const recordArticleView = (id: string) => dataService.recordArticleView(id);
 export const clearCache = () => dataService.clearCache();
+
+// Export categories synchronously (they're loaded during navigation)
+export const categories = dataService.getCategoriesSync();
 
 export default dataService;

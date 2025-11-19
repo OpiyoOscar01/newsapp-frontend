@@ -1,5 +1,5 @@
 import { apiEndpoints } from '../api/endpoints';
-import { type Category, type ApiCategory, type ApiArticle } from  '../../types/news';
+import { type Category, type ApiCategory, type ApiArticle } from '../../types/news';
 
 export class CategoryService {
   private colorMap: Map<string, string>;
@@ -24,19 +24,55 @@ export class CategoryService {
   async getCategories(): Promise<Category[]> {
     try {
       const apiCategories = await apiEndpoints.categories.list();
-      return apiCategories.map(cat => this.formatCategory(cat));
+      
+      if (Array.isArray(apiCategories) && apiCategories.length > 0) {
+        return apiCategories.map(cat => this.formatCategory(cat));
+      }
+      
+      // Fallback: Extract from articles
+      console.warn('No categories from API, extracting from articles...');
+      return this.extractCategoriesFromArticles();
     } catch (error) {
-      console.error('Failed to fetch categories, extracting from articles...', error);
+      console.error('CategoryService.getCategories error:', error);
       return this.extractCategoriesFromArticles();
     }
   }
 
-  async extractCategoriesFromArticles(): Promise<Category[]> {
+  async getCategory(slug: string): Promise<Category | null> {
+    try {
+      const apiCategory = await apiEndpoints.categories.get(slug);
+      return apiCategory ? this.formatCategory(apiCategory) : null;
+    } catch (error) {
+      console.error(`CategoryService.getCategory(${slug}) error:`, error);
+      // Try to find from all categories
+      const categories = await this.getCategories();
+      return categories.find(cat => cat.slug === slug) || null;
+    }
+  }
+
+  async getPopularCategories(limit: number = 6): Promise<Category[]> {
+    try {
+      const categories = await this.getCategories();
+      return categories
+        .sort((a, b) => (b.articleCount || 0) - (a.articleCount || 0))
+        .slice(0, limit);
+    } catch (error) {
+      console.error('CategoryService.getPopularCategories error:', error);
+      return [];
+    }
+  }
+
+  private async extractCategoriesFromArticles(): Promise<Category[]> {
     try {
       const articles = await apiEndpoints.articles.list({ perPage: 100 });
+      
+      if (!Array.isArray(articles) || articles.length === 0) {
+        return this.getFallbackCategories();
+      }
+      
       return this.buildCategoriesFromArticles(articles);
     } catch (error) {
-      console.error('Failed to extract categories from articles:', error);
+      console.error('CategoryService.extractCategoriesFromArticles error:', error);
       return this.getFallbackCategories();
     }
   }
@@ -76,43 +112,36 @@ export class CategoryService {
     return categories.sort((a, b) => (b.articleCount || 0) - (a.articleCount || 0));
   }
 
-  async getPopularCategories(limit: number = 6): Promise<Category[]> {
-    const categories = await this.getCategories();
-    return categories
-      .sort((a, b) => (b.articleCount || 0) - (a.articleCount || 0))
-      .slice(0, limit);
-  }
-
   private formatCategory(apiCategory: ApiCategory): Category {
     return {
       id: apiCategory.id.toString(),
-      name: apiCategory.name || apiCategory.slug,
+      name: apiCategory.name,
       slug: apiCategory.slug,
-      description: apiCategory.description || `News category: ${apiCategory.slug}`,
+      description: apiCategory.description || this.generateCategoryDescription(apiCategory.slug, apiCategory.name),
       color: this.getCategoryColor(apiCategory.slug),
       isActive: apiCategory.is_active,
     };
   }
 
   private formatCategoryName(slug: string): string {
-    return slug.charAt(0).toUpperCase() + slug.slice(1);
+    return slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, ' ');
   }
 
   private generateCategoryDescription(slug: string, name: string): string {
     const descriptions: { [key: string]: string } = {
-      'world': 'Global news and international affairs',
-      'business': 'Financial markets and business news',
-      'technology': 'Latest in tech and innovation',
-      'sports': 'Sports news and updates',
-      'health': 'Health and wellness news',
-      'science': 'Scientific discoveries and research',
+      'world': 'Global news and international affairs from around the world',
+      'business': 'Financial markets, economy, and business news',
+      'technology': 'Latest technology trends, innovations, and digital transformation',
+      'sports': 'Sports news, scores, highlights, and analysis',
+      'health': 'Health, wellness, medical breakthroughs, and healthcare news',
+      'science': 'Scientific discoveries, research, and innovation',
       'general': 'General news and current events',
-      'entertainment': 'Entertainment news and celebrity updates',
-      'politics': 'Political news and government affairs',
-      'environment': 'Environmental news and climate updates',
+      'entertainment': 'Entertainment news, celebrity updates, and pop culture',
+      'politics': 'Political news, government affairs, and policy updates',
+      'environment': 'Environmental news, climate change, and sustainability',
     };
 
-    return descriptions[slug] || `Latest ${name} news and updates`;
+    return descriptions[slug] || `Latest ${name} news and comprehensive coverage`;
   }
 
   private getCategoryColor(slug: string): string {
@@ -143,6 +172,22 @@ export class CategoryService {
         slug: 'general',
         description: 'General news and current events',
         color: 'bg-gray-500',
+        isActive: true
+      },
+      {
+        id: '2',
+        name: 'Technology',
+        slug: 'technology',
+        description: 'Latest technology trends and innovations',
+        color: 'bg-blue-500',
+        isActive: true
+      },
+      {
+        id: '3',
+        name: 'Business',
+        slug: 'business',
+        description: 'Business and financial news',
+        color: 'bg-green-500',
         isActive: true
       }
     ];
