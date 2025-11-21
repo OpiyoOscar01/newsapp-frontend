@@ -1,8 +1,7 @@
-// src/services/api/client.ts
 import { type ApiResponse } from '../../types/news';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || '2|IxvPI6yZTo080Agm6ouuuCQcdQpXM6pneRy7kxH1b39043bd';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '7|ejC4M3IxBn9FkqEHo8qEPpSkTH932fGJntkcKQqq8c8a66f2';
 
 export class ApiError extends Error {
   public status?: number;
@@ -95,11 +94,50 @@ class ApiClient {
     localStorage.setItem('user_data', JSON.stringify(userData));
   }
 
-  // Request deduplication
-  private getRequestKey(method: string, url: string, data?: any): string {
-    return `${method}:${url}:${JSON.stringify(data || {})}`;
+  // Public API methods (no authentication required)
+  async getPublic<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    const url = this.buildUrl(endpoint, params);
+    const requestKey = this.getRequestKey('GET', url);
+    
+    if (this.requestQueue.has(requestKey)) {
+      return this.requestQueue.get(requestKey)!;
+    }
+
+    // Remove auth headers for public requests
+    const publicHeaders = { ...this.headers };
+    delete (publicHeaders as any)['Authorization'];
+
+    const promise = this.fetchWithRetry<T>(url, { 
+      method: 'GET',
+      headers: publicHeaders 
+    });
+    this.requestQueue.set(requestKey, promise);
+    
+    try {
+      return await promise;
+    } finally {
+      this.requestQueue.delete(requestKey);
+    }
   }
 
+  async postPublic<T>(endpoint: string, data?: any): Promise<T> {
+    const url = `${BASE_URL}${endpoint}`;
+    
+    // Remove auth headers for public requests
+    const publicHeaders = { ...this.headers };
+    delete (publicHeaders as any)['Authorization'];
+
+    const response = await this.fetchWithRetry<T>(url, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+      headers: publicHeaders,
+    });
+
+    this.handleAuthResponse(endpoint, response as any);
+    return response;
+  }
+
+  // Protected API methods (with authentication)
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
     const url = this.buildUrl(endpoint, params);
     const requestKey = this.getRequestKey('GET', url);
@@ -293,6 +331,10 @@ class ApiClient {
     }
     
     return url.toString();
+  }
+
+  private getRequestKey(method: string, url: string, data?: any): string {
+    return `${method}:${url}:${JSON.stringify(data || {})}`;
   }
 
   private shouldRetry(error: unknown): boolean {

@@ -10,7 +10,7 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const location = useLocation();
@@ -114,9 +114,9 @@ const Navbar: React.FC = () => {
     return location.pathname === path;
   };
 
-  const handleRetry = () => {
-    window.location.reload();
-  };
+  // const handleRetry = () => {
+  //   window.location.reload();
+  // };
 
   // Show loading state
   if (loading) {

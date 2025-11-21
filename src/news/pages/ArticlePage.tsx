@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getArticleById, getRelatedArticles, recordArticleView } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { formatFullDate } from '../utils/formatDate';
@@ -14,7 +14,7 @@ import { ArticlePageSkeleton } from '../components/LoadingSkeletons';
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [inlineAds, setInlineAds] = useState<Ad[]>([]);
@@ -207,9 +207,9 @@ const ArticlePage: React.FC = () => {
               {article.title}
             </h1>
             
-            <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+            {/* <p className="text-xl text-gray-600 mb-6 leading-relaxed">
               {article.summary}
-            </p>
+            </p> */}
             
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
               <div className="flex items-center space-x-4">
@@ -234,11 +234,11 @@ const ArticlePage: React.FC = () => {
                 </div>
               </div>
               
-              <ShareButtons
+              {/* <ShareButtons
                 url={currentUrl}
                 title={article.title}
                 description={article.summary}
-              />
+              /> */}
             </div>
           </header>
 

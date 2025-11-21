@@ -77,13 +77,16 @@
 import { BrowserRouter as Router } from 'react-router-dom';
 import AppRoutes from './news/routes/AppRoutes';
 import './App.css';
+// import AppInitializer from './news/components/AppInitializer';
 
 function App() {
   return (
     <Router>
+      {/* <AppInitializer>   */}
       <div className="App">
         <AppRoutes />
       </div>
+      {/* </AppInitializer> */}
     </Router>
   );
 }

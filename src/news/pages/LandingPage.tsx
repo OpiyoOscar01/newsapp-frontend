@@ -1,45 +1,45 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { dataService } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { type Ad, type Article, type Category } from '../types';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
-import Pagination from '../components/Pagination';
+// import Pagination from '../components/Pagination';
 import CategoryNavigation from '../components/CategoryNavigation';
-import { LandingPageSkeleton} from '../components/LoadingSkeletons';
+import { LandingPageSkeleton, } from '../components/LoadingSkeletons';
 import './styles/landing.css';
 
-const ARTICLES_PER_PAGE = 3;
+// const ARTICLES_PER_PAGE = 3;
 
 const LandingPage: React.FC = () => {
   const [featuredAds, setFeaturedAds] = useState<Ad[]>([]);
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  const [categoryArticles, setCategoryArticles] = useState<Map<string, Article[]>>(new Map());
+  const [, setCategoryArticles] = useState<Map<string, Article[]>>(new Map());
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPages, setCurrentPages] = useState<Map<string, number>>(new Map());
+  const [, setCurrentPages] = useState<Map<string, number>>(new Map());
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
 
   // Generate random layout order
-  const randomLayoutOrder = useMemo(() => {
-    const layouts = [
-      'hero-asymmetric',
-      'wide-triple',
-      'magazine-sidebar',
-      'masonry-stack',
-      'spotlight-flow',
-      'alternating-media-text',
-      'carousel-grid',
-      'editorial-split',
-      'timeline-feed',
-      'visual-mosaic'
-    ];
+  // const randomLayoutOrder = useMemo(() => {
+  //   const layouts = [
+  //     'hero-asymmetric',
+  //     'wide-triple',
+  //     'magazine-sidebar',
+  //     'masonry-stack',
+  //     'spotlight-flow',
+  //     'alternating-media-text',
+  //     'carousel-grid',
+  //     'editorial-split',
+  //     'timeline-feed',
+  //     'visual-mosaic'
+  //   ];
     
-    return layouts.sort(() => Math.random() - 0.5);
-  }, []);
+  //   return layouts.sort(() => Math.random() - 0.5);
+  // }, []);
 
   useEffect(() => {
     loadData();
@@ -101,13 +101,13 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  const handlePageChange = (categorySlug: string, page: number) => {
-    setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
-    const categoryElement = document.querySelector(`[data-category="${categorySlug}"]`);
-    if (categoryElement) {
-      categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+  // const handlePageChange = (categorySlug: string, page: number) => {
+  //   setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
+  //   const categoryElement = document.querySelector(`[data-category="${categorySlug}"]`);
+  //   if (categoryElement) {
+  //     categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  //   }
+  // };
 
   const handleCategoryChange = (index: number) => {
     setCurrentCategoryIndex(index);
@@ -117,164 +117,164 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  const getPaginatedArticles = (categorySlug: string): Article[] => {
-    const articles = categoryArticles.get(categorySlug) || [];
-    const currentPage = currentPages.get(categorySlug) || 1;
+  // const getPaginatedArticles = (categorySlug: string): Article[] => {
+  //   const articles = categoryArticles.get(categorySlug) || [];
+  //   const currentPage = currentPages.get(categorySlug) || 1;
     
-    if (articles.length <= 1) return articles;
+  //   if (articles.length <= 1) return articles;
     
-    const firstArticle = articles[0];
-    const remainingArticles = articles.slice(1);
+  //   const firstArticle = articles[0];
+  //   const remainingArticles = articles.slice(1);
     
-    const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
-    const endIndex = startIndex + ARTICLES_PER_PAGE;
-    const paginatedRemaining = remainingArticles.slice(startIndex, endIndex);
+  //   const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+  //   const endIndex = startIndex + ARTICLES_PER_PAGE;
+  //   const paginatedRemaining = remainingArticles.slice(startIndex, endIndex);
     
-    return [firstArticle, ...paginatedRemaining];
-  };
+  //   return [firstArticle, ...paginatedRemaining];
+  // };
 
-  const getTotalPages = (categorySlug: string): number => {
-    const articles = categoryArticles.get(categorySlug) || [];
-    if (articles.length <= 1) return 1;
+  // const getTotalPages = (categorySlug: string): number => {
+  //   const articles = categoryArticles.get(categorySlug) || [];
+  //   if (articles.length <= 1) return 1;
     
-    const remainingArticles = articles.length - 1;
-    return Math.ceil(remainingArticles / ARTICLES_PER_PAGE);
-  };
+  //   const remainingArticles = articles.length - 1;
+  //   return Math.ceil(remainingArticles / ARTICLES_PER_PAGE);
+  // };
 
-  const getLayoutConfig = (index: number) => {
-    const layoutName = randomLayoutOrder[index % randomLayoutOrder.length];
-    return { name: layoutName };
-  };
+  // const getLayoutConfig = (index: number) => {
+  //   const layoutName = randomLayoutOrder[index % randomLayoutOrder.length];
+  //   return { name: layoutName };
+  // };
 
-  const renderCategoryLayout = (layoutConfig: any, articles: Article[]) => {
-    if (!articles || articles.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          No articles available for this category.
-        </div>
-      );
-    }
+  // const renderCategoryLayout = (layoutConfig: any, articles: Article[]) => {
+  //   if (!articles || articles.length === 0) {
+  //     return (
+  //       <div className="text-center py-8 text-gray-500">
+  //         No articles available for this category.
+  //       </div>
+  //     );
+  //   }
 
-    const [firstArticle, secondArticle, ...remainingArticles] = articles;
+  //   const [firstArticle, secondArticle, ...remainingArticles] = articles;
 
-    switch(layoutConfig.name) {
-      case 'hero-asymmetric':
-        return (
-          <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-5 lg:gap-6">
-            <div className="lg:col-span-2">
-              <NewsCard 
-                article={firstArticle} 
-                variant="large" 
-                priority="high"
-                isFirstInCategory={true}
-                showCategory={true}
-              />
-            </div>
-            <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
-              {secondArticle && (
-                <NewsCard 
-                  article={secondArticle} 
-                  variant="compact" 
-                  orientation="horizontal"
-                  isFirstInCategory={false}
-                  hideMetaMobile={true}
-                  showCategory={true}
-                />
-              )}
-              {remainingArticles.map((article) => (
-                <NewsCard 
-                  key={article.id} 
-                  article={article} 
-                  variant="compact" 
-                  orientation="horizontal"
-                  isFirstInCategory={false}
-                  hideMetaMobile={true}
-                  showCategory={true}
-                />
-              ))}
-            </div>
-          </div>
-        );
+  //   switch(layoutConfig.name) {
+  //     case 'hero-asymmetric':
+  //       return (
+  //         <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-5 lg:gap-6">
+  //           <div className="lg:col-span-2">
+  //             <NewsCard 
+  //               article={firstArticle} 
+  //               variant="large" 
+  //               priority="high"
+  //               isFirstInCategory={true}
+  //               showCategory={true}
+  //             />
+  //           </div>
+  //           <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
+  //             {secondArticle && (
+  //               <NewsCard 
+  //                 article={secondArticle} 
+  //                 variant="compact" 
+  //                 orientation="horizontal"
+  //                 isFirstInCategory={false}
+  //                 hideMetaMobile={true}
+  //                 showCategory={true}
+  //               />
+  //             )}
+  //             {remainingArticles.map((article) => (
+  //               <NewsCard 
+  //                 key={article.id} 
+  //                 article={article} 
+  //                 variant="compact" 
+  //                 orientation="horizontal"
+  //                 isFirstInCategory={false}
+  //                 hideMetaMobile={true}
+  //                 showCategory={true}
+  //               />
+  //             ))}
+  //           </div>
+  //         </div>
+  //       );
 
-      case 'wide-triple':
-        return (
-          <div className="space-y-3 md:space-y-5 lg:space-y-6">
-            <div>
-              <NewsCard 
-                article={firstArticle} 
-                variant="wide" 
-                priority="high"
-                isFirstInCategory={true}
-                showCategory={true}
-              />
-            </div>
-            <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-              {secondArticle && (
-                <div className="md:col-span-2 lg:col-span-1">
-                  <NewsCard 
-                    article={secondArticle} 
-                    variant="compact" 
-                    orientation="horizontal"
-                    isFirstInCategory={false}
-                    hideMetaMobile={true}
-                    showCategory={true}
-                  />
-                </div>
-              )}
-              {remainingArticles.map((article) => (
-                <NewsCard 
-                  key={article.id} 
-                  article={article} 
-                  variant="compact" 
-                  orientation="horizontal"
-                  isFirstInCategory={false}
-                  hideMetaMobile={true}
-                  showCategory={true}
-                />
-              ))}
-            </div>
-          </div>
-        );
+  //     case 'wide-triple':
+  //       return (
+  //         <div className="space-y-3 md:space-y-5 lg:space-y-6">
+  //           <div>
+  //             <NewsCard 
+  //               article={firstArticle} 
+  //               variant="wide" 
+  //               priority="high"
+  //               isFirstInCategory={true}
+  //               showCategory={true}
+  //             />
+  //           </div>
+  //           <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+  //             {secondArticle && (
+  //               <div className="md:col-span-2 lg:col-span-1">
+  //                 <NewsCard 
+  //                   article={secondArticle} 
+  //                   variant="compact" 
+  //                   orientation="horizontal"
+  //                   isFirstInCategory={false}
+  //                   hideMetaMobile={true}
+  //                   showCategory={true}
+  //                 />
+  //               </div>
+  //             )}
+  //             {remainingArticles.map((article) => (
+  //               <NewsCard 
+  //                 key={article.id} 
+  //                 article={article} 
+  //                 variant="compact" 
+  //                 orientation="horizontal"
+  //                 isFirstInCategory={false}
+  //                 hideMetaMobile={true}
+  //                 showCategory={true}
+  //               />
+  //             ))}
+  //           </div>
+  //         </div>
+  //       );
 
-      default:
-        return (
-          <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-            <div className="lg:col-span-2">
-              <NewsCard 
-                article={firstArticle} 
-                variant="large" 
-                priority="high"
-                isFirstInCategory={true}
-                showCategory={true}
-              />
-            </div>
-            <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
-              {secondArticle && (
-                <NewsCard 
-                  article={secondArticle} 
-                  variant="compact" 
-                  orientation="horizontal"
-                  isFirstInCategory={false}
-                  hideMetaMobile={true}
-                  showCategory={true}
-                />
-              )}
-              {remainingArticles.map((article) => (
-                <NewsCard 
-                  key={article.id} 
-                  article={article} 
-                  variant="compact" 
-                  orientation="horizontal"
-                  isFirstInCategory={false}
-                  hideMetaMobile={true}
-                  showCategory={true}
-                />
-              ))}
-            </div>
-          </div>
-        );
-    }
-  };
+  //     default:
+  //       return (
+  //         <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+  //           <div className="lg:col-span-2">
+  //             <NewsCard 
+  //               article={firstArticle} 
+  //               variant="large" 
+  //               priority="high"
+  //               isFirstInCategory={true}
+  //               showCategory={true}
+  //             />
+  //           </div>
+  //           <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
+  //             {secondArticle && (
+  //               <NewsCard 
+  //                 article={secondArticle} 
+  //                 variant="compact" 
+  //                 orientation="horizontal"
+  //                 isFirstInCategory={false}
+  //                 hideMetaMobile={true}
+  //                 showCategory={true}
+  //               />
+  //             )}
+  //             {remainingArticles.map((article) => (
+  //               <NewsCard 
+  //                 key={article.id} 
+  //                 article={article} 
+  //                 variant="compact" 
+  //                 orientation="horizontal"
+  //                 isFirstInCategory={false}
+  //                 hideMetaMobile={true}
+  //                 showCategory={true}
+  //               />
+  //             ))}
+  //           </div>
+  //         </div>
+  //       );
+  //   }
+  // };
 
   if (loading) {
     return <LandingPageSkeleton />;
@@ -358,7 +358,7 @@ const LandingPage: React.FC = () => {
         </section>
       )}
 
-      {/* Category Sections */}
+      {/* Category Sections
       <div className="space-y-10 md:space-y-20">
         {categories.map((category, categoryIndex) => {
           const paginatedArticles = getPaginatedArticles(category.slug);
@@ -425,7 +425,7 @@ const LandingPage: React.FC = () => {
             </React.Fragment>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Newsletter Section */}
       <section className="mt-16 md:mt-24">

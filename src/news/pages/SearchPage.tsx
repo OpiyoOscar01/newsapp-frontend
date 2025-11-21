@@ -18,7 +18,7 @@ const SearchPage: React.FC = () => {
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
   const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   
   // Read directly from URL params
   const searchQuery = searchParams.get('q') || '';
