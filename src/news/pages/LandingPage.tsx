@@ -1,45 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { dataService } from '../data/dataService';
 import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
 import { type Ad, type Article, type Category } from '../types';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
-// import Pagination from '../components/Pagination';
-import CategoryNavigation from '../components/CategoryNavigation';
+import Pagination from '../components/Pagination';
+// import CategoryNavigation from '../components/CategoryNavigation';
 import { LandingPageSkeleton, } from '../components/LoadingSkeletons';
 import './styles/landing.css';
 
-// const ARTICLES_PER_PAGE = 3;
+const ARTICLES_PER_PAGE = 3;
 
 const LandingPage: React.FC = () => {
   const [featuredAds, setFeaturedAds] = useState<Ad[]>([]);
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  const [, setCategoryArticles] = useState<Map<string, Article[]>>(new Map());
+  const [categoryAds, setCategoryAds] = useState<Ad[]>([]); // New state for category ads
+  const [categoryArticles, setCategoryArticles] = useState<Map<string, Article[]>>(new Map());
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredArticle, setFeaturedArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [, setCurrentPages] = useState<Map<string, number>>(new Map());
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
+  const [currentPages, setCurrentPages] = useState<Map<string, number>>(new Map());
+  // const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
 
   // Generate random layout order
-  // const randomLayoutOrder = useMemo(() => {
-  //   const layouts = [
-  //     'hero-asymmetric',
-  //     'wide-triple',
-  //     'magazine-sidebar',
-  //     'masonry-stack',
-  //     'spotlight-flow',
-  //     'alternating-media-text',
-  //     'carousel-grid',
-  //     'editorial-split',
-  //     'timeline-feed',
-  //     'visual-mosaic'
-  //   ];
+  const randomLayoutOrder = useMemo(() => {
+    const layouts = [
+      'hero-asymmetric',
+      'wide-triple',
+      'magazine-sidebar',
+      'masonry-stack',
+      'spotlight-flow',
+      'alternating-media-text',
+      'carousel-grid',
+      'editorial-split',
+      'timeline-feed',
+      'visual-mosaic'
+    ];
     
-  //   return layouts.sort(() => Math.random() - 0.5);
-  // }, []);
+    return layouts.sort(() => Math.random() - 0.5);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -50,11 +51,14 @@ const LandingPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Load ads (non-blocking)
+      // Load 3 ads total: 2 banner ads + 1 sidebar ad + 1 category ad
       const bannerAds = selectMultipleAds('landing', 2, 'banner');
       const sidebar = selectRandomAd('landing', 'sidebar');
+      const categoryAd = selectRandomAd('landing', 'category'); // New category ad
+      
       setFeaturedAds(bannerAds);
       setSidebarAd(sidebar);
+      setCategoryAds([categoryAd]); // Store category ad
 
       // Load categories first
       const categoriesData = await dataService.getCategories();
@@ -101,180 +105,180 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // const handlePageChange = (categorySlug: string, page: number) => {
-  //   setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
-  //   const categoryElement = document.querySelector(`[data-category="${categorySlug}"]`);
-  //   if (categoryElement) {
-  //     categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  //   }
-  // };
-
-  const handleCategoryChange = (index: number) => {
-    setCurrentCategoryIndex(index);
-    const categoryElement = document.querySelector(`[data-category="${categories[index].slug}"]`);
+  const handlePageChange = (categorySlug: string, page: number) => {
+    setCurrentPages(prev => new Map(prev.set(categorySlug, page)));
+    const categoryElement = document.querySelector(`[data-category="${categorySlug}"]`);
     if (categoryElement) {
       categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  // const getPaginatedArticles = (categorySlug: string): Article[] => {
-  //   const articles = categoryArticles.get(categorySlug) || [];
-  //   const currentPage = currentPages.get(categorySlug) || 1;
-    
-  //   if (articles.length <= 1) return articles;
-    
-  //   const firstArticle = articles[0];
-  //   const remainingArticles = articles.slice(1);
-    
-  //   const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
-  //   const endIndex = startIndex + ARTICLES_PER_PAGE;
-  //   const paginatedRemaining = remainingArticles.slice(startIndex, endIndex);
-    
-  //   return [firstArticle, ...paginatedRemaining];
-  // };
-
-  // const getTotalPages = (categorySlug: string): number => {
-  //   const articles = categoryArticles.get(categorySlug) || [];
-  //   if (articles.length <= 1) return 1;
-    
-  //   const remainingArticles = articles.length - 1;
-  //   return Math.ceil(remainingArticles / ARTICLES_PER_PAGE);
-  // };
-
-  // const getLayoutConfig = (index: number) => {
-  //   const layoutName = randomLayoutOrder[index % randomLayoutOrder.length];
-  //   return { name: layoutName };
-  // };
-
-  // const renderCategoryLayout = (layoutConfig: any, articles: Article[]) => {
-  //   if (!articles || articles.length === 0) {
-  //     return (
-  //       <div className="text-center py-8 text-gray-500">
-  //         No articles available for this category.
-  //       </div>
-  //     );
-  //   }
-
-  //   const [firstArticle, secondArticle, ...remainingArticles] = articles;
-
-  //   switch(layoutConfig.name) {
-  //     case 'hero-asymmetric':
-  //       return (
-  //         <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-5 lg:gap-6">
-  //           <div className="lg:col-span-2">
-  //             <NewsCard 
-  //               article={firstArticle} 
-  //               variant="large" 
-  //               priority="high"
-  //               isFirstInCategory={true}
-  //               showCategory={true}
-  //             />
-  //           </div>
-  //           <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
-  //             {secondArticle && (
-  //               <NewsCard 
-  //                 article={secondArticle} 
-  //                 variant="compact" 
-  //                 orientation="horizontal"
-  //                 isFirstInCategory={false}
-  //                 hideMetaMobile={true}
-  //                 showCategory={true}
-  //               />
-  //             )}
-  //             {remainingArticles.map((article) => (
-  //               <NewsCard 
-  //                 key={article.id} 
-  //                 article={article} 
-  //                 variant="compact" 
-  //                 orientation="horizontal"
-  //                 isFirstInCategory={false}
-  //                 hideMetaMobile={true}
-  //                 showCategory={true}
-  //               />
-  //             ))}
-  //           </div>
-  //         </div>
-  //       );
-
-  //     case 'wide-triple':
-  //       return (
-  //         <div className="space-y-3 md:space-y-5 lg:space-y-6">
-  //           <div>
-  //             <NewsCard 
-  //               article={firstArticle} 
-  //               variant="wide" 
-  //               priority="high"
-  //               isFirstInCategory={true}
-  //               showCategory={true}
-  //             />
-  //           </div>
-  //           <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-  //             {secondArticle && (
-  //               <div className="md:col-span-2 lg:col-span-1">
-  //                 <NewsCard 
-  //                   article={secondArticle} 
-  //                   variant="compact" 
-  //                   orientation="horizontal"
-  //                   isFirstInCategory={false}
-  //                   hideMetaMobile={true}
-  //                   showCategory={true}
-  //                 />
-  //               </div>
-  //             )}
-  //             {remainingArticles.map((article) => (
-  //               <NewsCard 
-  //                 key={article.id} 
-  //                 article={article} 
-  //                 variant="compact" 
-  //                 orientation="horizontal"
-  //                 isFirstInCategory={false}
-  //                 hideMetaMobile={true}
-  //                 showCategory={true}
-  //               />
-  //             ))}
-  //           </div>
-  //         </div>
-  //       );
-
-  //     default:
-  //       return (
-  //         <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-  //           <div className="lg:col-span-2">
-  //             <NewsCard 
-  //               article={firstArticle} 
-  //               variant="large" 
-  //               priority="high"
-  //               isFirstInCategory={true}
-  //               showCategory={true}
-  //             />
-  //           </div>
-  //           <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
-  //             {secondArticle && (
-  //               <NewsCard 
-  //                 article={secondArticle} 
-  //                 variant="compact" 
-  //                 orientation="horizontal"
-  //                 isFirstInCategory={false}
-  //                 hideMetaMobile={true}
-  //                 showCategory={true}
-  //               />
-  //             )}
-  //             {remainingArticles.map((article) => (
-  //               <NewsCard 
-  //                 key={article.id} 
-  //                 article={article} 
-  //                 variant="compact" 
-  //                 orientation="horizontal"
-  //                 isFirstInCategory={false}
-  //                 hideMetaMobile={true}
-  //                 showCategory={true}
-  //               />
-  //             ))}
-  //           </div>
-  //         </div>
-  //       );
+  // const handleCategoryChange = (index: number) => {
+  //   setCurrentCategoryIndex(index);
+  //   const categoryElement = document.querySelector(`[data-category="${categories[index].slug}"]`);
+  //   if (categoryElement) {
+  //     categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   //   }
   // };
+
+  const getPaginatedArticles = (categorySlug: string): Article[] => {
+    const articles = categoryArticles.get(categorySlug) || [];
+    const currentPage = currentPages.get(categorySlug) || 1;
+    
+    if (articles.length <= 1) return articles;
+    
+    const firstArticle = articles[0];
+    const remainingArticles = articles.slice(1);
+    
+    const startIndex = (currentPage - 1) * ARTICLES_PER_PAGE;
+    const endIndex = startIndex + ARTICLES_PER_PAGE;
+    const paginatedRemaining = remainingArticles.slice(startIndex, endIndex);
+    
+    return [firstArticle, ...paginatedRemaining];
+  };
+
+  const getTotalPages = (categorySlug: string): number => {
+    const articles = categoryArticles.get(categorySlug) || [];
+    if (articles.length <= 1) return 1;
+    
+    const remainingArticles = articles.length - 1;
+    return Math.ceil(remainingArticles / ARTICLES_PER_PAGE);
+  };
+
+  const getLayoutConfig = (index: number) => {
+    const layoutName = randomLayoutOrder[index % randomLayoutOrder.length];
+    return { name: layoutName };
+  };
+
+  const renderCategoryLayout = (layoutConfig: any, articles: Article[]) => {
+    if (!articles || articles.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          No articles available for this category.
+        </div>
+      );
+    }
+
+    const [firstArticle, secondArticle, ...remainingArticles] = articles;
+
+    switch(layoutConfig.name) {
+      case 'hero-asymmetric':
+        return (
+          <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-1 lg:grid-cols-3 md:gap-5 lg:gap-6">
+            <div className="lg:col-span-2">
+              <NewsCard 
+                article={firstArticle} 
+                variant="large" 
+                priority="high"
+                isFirstInCategory={true}
+                showCategory={true}
+              />
+            </div>
+            <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
+              {secondArticle && (
+                <NewsCard 
+                  article={secondArticle} 
+                  variant="compact" 
+                  orientation="horizontal"
+                  isFirstInCategory={false}
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              )}
+              {remainingArticles.map((article) => (
+                <NewsCard 
+                  key={article.id} 
+                  article={article} 
+                  variant="compact" 
+                  orientation="horizontal"
+                  isFirstInCategory={false}
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'wide-triple':
+        return (
+          <div className="space-y-3 md:space-y-5 lg:space-y-6">
+            <div>
+              <NewsCard 
+                article={firstArticle} 
+                variant="wide" 
+                priority="high"
+                isFirstInCategory={true}
+                showCategory={true}
+              />
+            </div>
+            <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+              {secondArticle && (
+                <div className="md:col-span-2 lg:col-span-1">
+                  <NewsCard 
+                    article={secondArticle} 
+                    variant="compact" 
+                    orientation="horizontal"
+                    isFirstInCategory={false}
+                    hideMetaMobile={true}
+                    showCategory={true}
+                  />
+                </div>
+              )}
+              {remainingArticles.map((article) => (
+                <NewsCard 
+                  key={article.id} 
+                  article={article} 
+                  variant="compact" 
+                  orientation="horizontal"
+                  isFirstInCategory={false}
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-3 md:space-y-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+            <div className="lg:col-span-2">
+              <NewsCard 
+                article={firstArticle} 
+                variant="large" 
+                priority="high"
+                isFirstInCategory={true}
+                showCategory={true}
+              />
+            </div>
+            <div className="space-y-3 md:space-y-5 md:grid md:grid-cols-2 md:gap-5 lg:grid-cols-1">
+              {secondArticle && (
+                <NewsCard 
+                  article={secondArticle} 
+                  variant="compact" 
+                  orientation="horizontal"
+                  isFirstInCategory={false}
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              )}
+              {remainingArticles.map((article) => (
+                <NewsCard 
+                  key={article.id} 
+                  article={article} 
+                  variant="compact" 
+                  orientation="horizontal"
+                  isFirstInCategory={false}
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              ))}
+            </div>
+          </div>
+        );
+    }
+  };
 
   if (loading) {
     return <LandingPageSkeleton />;
@@ -302,9 +306,23 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      {/* Ad 1: Top Banner Ad */}
+      {featuredAds[0] && (
+        <section className="mb-8 md:mb-12">
+          <div className="w-full bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-1 border-2 border-gray-200">
+            <AdBanner 
+              ad={featuredAds[0]} 
+              placement="top-banner" 
+              size="leaderboard"
+              className="min-h-[90px] md:min-h-[120px]"
+            />
+          </div>
+        </section>
+      )}
+
       {/* Featured Article Showcase */}
       {featuredArticle && (
-        <section className="mb-10 md:mb-12 -mx-4 sm:mx-0">
+        <section className="mb-10 md:mb-16 -mx-4 sm:mx-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 sm:gap-6 lg:gap-8">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-6 px-4 sm:px-0">
@@ -325,11 +343,27 @@ const LandingPage: React.FC = () => {
               />
             </div>
             
+            {/* Ad 2: Sidebar Ad (Desktop) / Inline Ad (Mobile) */}
             {sidebarAd && (
               <div className="px-4 sm:px-0">
-                <div className="sticky top-24">
-                  <div className="bg-gray-50 rounded-lg p-1 border-2 border-gray-200">
-                    <AdBanner ad={sidebarAd} placement="landing" />
+                <div className="lg:sticky lg:top-24">
+                  <div className="bg-gray-50 rounded-lg p-2 border-2 border-gray-200">
+                    <div className="hidden lg:block">
+                      <AdBanner 
+                        ad={sidebarAd} 
+                        placement="sidebar" 
+                        size="medium-rectangle"
+                        className="min-h-[250px]"
+                      />
+                    </div>
+                    <div className="lg:hidden">
+                      <AdBanner 
+                        ad={sidebarAd} 
+                        placement="inline" 
+                        size="banner"
+                        className="min-h-[100px]"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -338,17 +372,8 @@ const LandingPage: React.FC = () => {
         </section>
       )}
 
-      {/* Banner Ad 1 */}
-      {featuredAds[0] && (
-        <section className="mb-10 md:mb-16">
-          <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg border-2 border-gray-200">
-            <AdBanner ad={featuredAds[0]} placement="landing" />
-          </div>
-        </section>
-      )}
-
       {/* Category Navigation */}
-      {categories.length > 1 && (
+      {/* {categories.length > 1 && (
         <section className="mb-8">
           <CategoryNavigation
             categories={categories}
@@ -356,9 +381,9 @@ const LandingPage: React.FC = () => {
             onCategoryChange={handleCategoryChange}
           />
         </section>
-      )}
+      )} */}
 
-      {/* Category Sections
+      {/* Category Sections */}
       <div className="space-y-10 md:space-y-20">
         {categories.map((category, categoryIndex) => {
           const paginatedArticles = getPaginatedArticles(category.slug);
@@ -403,6 +428,29 @@ const LandingPage: React.FC = () => {
                     {renderCategoryLayout(layoutConfig, paginatedArticles)}
                   </div>
 
+                  {/* Ad 3: Middle Category Ad (appears after first category on mobile, in the middle on desktop) */}
+                  {categoryIndex === 0 && categoryAds[0] && (
+                    <div className="my-8 md:my-12">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+                        <div className="lg:col-span-2">
+                          <div className="bg-gradient-to-r from-gray-50 to-primary-50/30 rounded-lg p-2 border-2 border-gray-200">
+                            <AdBanner 
+                              ad={categoryAds[0]} 
+                              placement="category-middle" 
+                              size="leaderboard"
+                              className="min-h-[100px] md:min-h-[120px]"
+                            />
+                          </div>
+                        </div>
+                        <div className="text-center lg:text-left">
+                          <p className="text-sm text-gray-600">
+                            Sponsored content helps support our journalism
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {totalPages > 1 && (
                     <div className="flex justify-center mt-8">
                       <Pagination
@@ -415,17 +463,23 @@ const LandingPage: React.FC = () => {
                 </div>
               </section>
 
+              {/* Legacy Banner Ad 2 placement (kept for compatibility) */}
               {categoryIndex === 2 && featuredAds[1] && (
                 <section className="w-full my-10 md:my-12">
-                  <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-1 border-2 border-gray-200">
-                    <AdBanner ad={featuredAds[1]} placement="landing" />
+                  <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border-2 border-gray-200">
+                    <AdBanner 
+                      ad={featuredAds[1]} 
+                      placement="landing" 
+                      size="leaderboard"
+                      className="min-h-[90px] md:min-h-[120px]"
+                    />
                   </div>
                 </section>
               )}
             </React.Fragment>
           );
         })}
-      </div> */}
+      </div>
 
       {/* Newsletter Section */}
       <section className="mt-16 md:mt-24">

@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definepress - Professional News Platform Coming Soon</title>
+    <meta name="description" content="Definepress is a cutting-edge news application bringing you reliable, timely, and comprehensive news coverage. Launching soon.">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='50' fill='%232563eb'/><text x='50' y='65' font-family='Arial' font-size='60' font-weight='bold' text-anchor='middle' fill='white'>D</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ==========================================
+   DEFINEPRESS - PROFESSIONAL NEWS PLATFORM
+   Modern Landing Page Styles
+   Brand Colors: Blue (#2563eb, #1d4ed8) & White (#ffffff)
+   ========================================== */
+
+/* CSS Variables for Brand Colors */
+:root {
+  /* Primary Brand Colors */
+  --primary-blue: #2563eb;
+  --primary-blue-dark: #1d4ed8;
+  --primary-blue-light: #3b82f6;
+  --accent-blue: #60a5fa;
+  --light-blue: #dbeafe;
+  --white: #ffffff;
+  
+  /* Neutral Colors */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 3rem;
+  --font-size-6xl: 3.75rem;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Animations */
+  --transition-fast: 150ms ease-in-out;
+  --transition-medium: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+}
+
+/* ==========================================
+   RESET & BASE STYLES
+   ========================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--gray-800);
+  background-color: var(--white);
+  overflow-x: hidden;
+}
+
+/* ==========================================
+   TYPOGRAPHY
+   ========================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-900);
+}
+
+h1 {
+  font-size: var(--font-size-5xl);
+  font-weight: 800;
+}
+
+h2 {
+  font-size: var(--font-size-4xl);
+}
+
+h3 {
+  font-size: var(--font-size-2xl);
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-600);
+}
+
+.lead {
+  font-size: var(--font-size-xl);
+  font-weight: 400;
+  color: var(--gray-700);
+}
+
+.brand-text {
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+/* ==========================================
+   LAYOUT UTILITIES
+   ========================================== */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.section-header h2 {
+  margin-bottom: var(--spacing-md);
+}
+
+.section-header p {
+  font-size: var(--font-size-xl);
+  color: var(--gray-600);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ==========================================
+   BUTTONS
+   ========================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-medium);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-dark));
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-blue);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+.cta-buttons {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-2xl);
+}
+
+/* ==========================================
+   NAVIGATION
+   ========================================== */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--gray-200);
+  z-index: 1000;
+  transition: all var(--transition-medium);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-brand .logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.nav-brand .logo i {
+  font-size: var(--font-size-2xl);
+}
+
+.nav-menu {
+  display: flex;
+  gap: var(--spacing-2xl);
+}
+
+.nav-link {
+  color: var(--gray-700);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--primary-blue);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary-blue);
+  transition: width var(--transition-medium);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* ==========================================
+   HERO SECTION
+   ========================================== */
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: var(--spacing-3xl) 0;
+  margin-top: 80px;
+  background: linear-gradient(135deg, var(--gray-50) 0%, var(--light-blue) 100%);
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 50%);
+}
+
+.hero .container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3xl);
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--white);
+  border: 2px solid var(--primary-blue);
+  border-radius: var(--radius-2xl);
+  color: var(--primary-blue);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xl);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.hero-title {
+  font-size: var(--font-size-6xl);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: var(--spacing-lg);
+}
+
+.hero-subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--gray-600);
+  margin-bottom: var(--spacing-2xl);
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--primary-blue);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-weight: 700;
+  color: var(--gray-900);
+  font-size: var(--font-size-lg);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--gray-500);
+}
+
+/* ==========================================
+   PHONE MOCKUP
+   ========================================== */
+
+.hero-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.phone-mockup {
+  position: relative;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.phone-frame {
+  width: 300px;
+  height: 600px;
+  background: var(--gray-900);
+  border-radius: var(--radius-2xl);
+  padding: 20px;
+  box-shadow: var(--shadow-2xl);
+  position: relative;
+}
+
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: var(--gray-600);
+  border-radius: var(--radius-sm);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-interface {
+  padding: var(--spacing-lg);
+  height: 100%;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+.app-menu {
+  display: flex;
+  gap: var(--spacing-md);
+  color: var(--gray-600);
+}
+
+.news-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.news-card {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.news-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.news-image {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+  border-radius: var(--radius-sm);
+}
+
+.news-content {
+  flex: 1;
+}
+
+.news-category {
+  font-size: var(--font-size-xs);
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-xs);
+}
+
+.news-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: var(--spacing-xs);
+}
+
+.news-time {
+  font-size: var(--font-size-xs);
+  color: var(--gray-500);
+}
+
+/* ==========================================
+   FEATURES SECTION
+   ========================================== */
+
+.features {
+  padding: var(--spacing-3xl) 0;
+  background: var(--white);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-2xl);
+}
+
+.feature-card {
+  text-align: center;
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-xl);
+  background: var(--gray-50);
+  transition: all var(--transition-medium);
+  border: 1px solid transparent;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-blue);
+  background: var(--white);
+}
+
+.feature-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+  color: var(--white);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-lg);
+  font-size: var(--font-size-2xl);
+}
+
+.feature-card h3 {
+  margin-bottom: var(--spacing-md);
+  color: var(--gray-900);
+}
+
+.feature-card p {
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+
+/* ==========================================
+   ABOUT SECTION
+   ========================================== */
+
+.about {
+  padding: var(--spacing-3xl) 0;
+  background: linear-gradient(135deg, var(--light-blue) 0%, var(--gray-50) 100%);
+}
+
+.about-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3xl);
+  align-items: center;
+}
+
+.about-text h2 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.about-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-2xl);
+}
+
+.about-feature {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+.about-feature i {
+  color: var(--primary-blue);
+  font-size: var(--font-size-lg);
+}
+
+.visual-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+}
+
+.visual-item {
+  background: var(--white);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-medium);
+}
+
+.visual-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.visual-item i {
+  font-size: var(--font-size-3xl);
+  color: var(--primary-blue);
+  margin-bottom: var(--spacing-md);
+  display: block;
+}
+
+.visual-item span {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+/* ==========================================
+   NEWSLETTER SECTION
+   ========================================== */
+
+.newsletter {
+  padding: var(--spacing-3xl) 0;
+  background: var(--primary-blue);
+  color: var(--white);
+}
+
+.newsletter-content {
+  text-align: center;
+}
+
+.newsletter-text h2 {
+  color: var(--white);
+  margin-bottom: var(--spacing-md);
+}
+
+.newsletter-text p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.newsletter-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-group {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+#emailInput {
+  flex: 1;
+  padding: var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  background: var(--white);
+}
+
+#emailInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.newsletter .btn-primary {
+  background: var(--white);
+  color: var(--primary-blue);
+}
+
+.newsletter .btn-primary:hover {
+  background: var(--gray-100);
+  transform: translateY(-2px);
+}
+
+.form-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ==========================================
+   FOOTER
+   ========================================== */
+
+.footer {
+  background: var(--gray-900);
+  color: var(--white);
+  padding: var(--spacing-3xl) 0 var(--spacing-xl);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.footer-brand .logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: var(--spacing-md);
+}
+
+.footer-brand .logo i {
+  font-size: var(--font-size-2xl);
+  color: var(--primary-blue);
+}
+
+.footer-brand p {
+  color: var(--gray-400);
+}
+
+.link-group h4 {
+  color: var(--white);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-lg);
+}
+
+.link-group a {
+  display: block;
+  color: var(--gray-400);
+  text-decoration: none;
+  margin-bottom: var(--spacing-sm);
+  transition: color var(--transition-fast);
+}
+
+.link-group a:hover {
+  color: var(--white);
+}
+
+.footer-social h4 {
+  margin-bottom: var(--spacing-md);
+}
+
+.social-links {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  background: var(--gray-800);
+  color: var(--gray-400);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all var(--transition-medium);
+}
+
+.social-link:hover {
+  background: var(--primary-blue);
+  color: var(--white);
+  transform: translateY(-2px);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--gray-800);
+  padding-top: var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--gray-400);
+  font-size: var(--font-size-sm);
+}
+
+.development-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 1024px) {
+  .hero .container {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .about-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: var(--font-size-4xl);
+  }
+  
+  .hero-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .nav-menu {
+    display: none;
+  }
+  
+  .phone-frame {
+    width: 250px;
+    height: 500px;
+  }
+  
+  .about-features {
+    grid-template-columns: 1fr;
+  }
+  
+  .visual-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-group {
+    flex-direction: column;
+  }
+  
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+  
+  .hero-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .hero-subtitle {
+    font-size: var(--font-size-lg);
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .feature-card {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* ==========================================
+   UTILITIES
+   ========================================== */
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mb-sm { margin-bottom: var(--spacing-sm); }
+.mb-md { margin-bottom: var(--spacing-md); }
+.mb-lg { margin-bottom: var(--spacing-lg); }
+.mb-xl { margin-bottom: var(--spacing-xl); }
+
+.mt-sm { margin-top: var(--spacing-sm); }
+.mt-md { margin-top: var(--spacing-md); }
+.mt-lg { margin-top: var(--spacing-lg); }
+.mt-xl { margin-top: var(--spacing-xl); }
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease-out;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Loading and Success States */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.success {
+  background: #10b981 !important;
+  color: white !important;
+}
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="logo">
+                    <i class="fas fa-newspaper"></i>
+                    <span>Definepress</span>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <a href="#about" class="nav-link">About</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-background"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-clock"></i>
+                    <span>Coming Soon</span>
+                </div>
+                <h1 class="hero-title">
+                    Welcome to <span class="brand-text">Definepress</span>
+                </h1>
+                <p class="hero-subtitle">
+                    The future of news is being redefined. Get ready for a revolutionary news platform that delivers reliable, timely, and comprehensive coverage like never before.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="stat-text">
+                            <span class="stat-number">Global</span>
+                            <span class="stat-label">Coverage</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-text">
+                            <span class="stat-number">Real-time</span>
+                            <span class="stat-label">Updates</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="stat-text">
+                            <span class="stat-number">Verified</span>
+                            <span class="stat-label">Sources</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary" id="notifyBtn">
+                        <i class="fas fa-bell"></i>
+                        Get Notified at Launch
+                    </button>
+                    <button class="btn btn-secondary" id="learnMoreBtn">
+                        <i class="fas fa-play"></i>
+                        Learn More
+                    </button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="phone-mockup">
+                    <div class="phone-frame">
+                        <div class="phone-screen">
+                            <div class="app-interface">
+                                <div class="app-header">
+                                    <div class="app-logo">
+                                        <i class="fas fa-newspaper"></i>
+                                        <span>Definepress</span>
+                                    </div>
+                                    <div class="app-menu">
+                                        <i class="fas fa-search"></i>
+                                        <i class="fas fa-user-circle"></i>
+                                    </div>
+                                </div>
+                                <div class="news-cards">
+                                    <div class="news-card">
+                                        <div class="news-image"></div>
+                                        <div class="news-content">
+                                            <div class="news-category">Breaking</div>
+                                            <div class="news-title">Global News Update</div>
+                                            <div class="news-time">2 min ago</div>
+                                        </div>
+                                    </div>
+                                    <div class="news-card">
+                                        <div class="news-image"></div>
+                                        <div class="news-content">
+                                            <div class="news-category">Technology</div>
+                                            <div class="news-title">Innovation Report</div>
+                                            <div class="news-time">15 min ago</div>
+                                        </div>
+                                    </div>
+                                    <div class="news-card">
+                                        <div class="news-image"></div>
+                                        <div class="news-content">
+                                            <div class="news-category">Business</div>
+                                            <div class="news-title">Market Analysis</div>
+                                            <div class="news-time">1 hour ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Choose Definepress?</h2>
+                <p>Experience news consumption like never before with our innovative features</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Lightning Fast</h3>
+                    <p>Get breaking news the moment it happens with our real-time delivery system.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3>Personalized Feed</h3>
+                    <p>AI-powered content curation tailored to your interests and reading preferences.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Fact-Checked</h3>
+                    <p>Every story is verified through multiple sources to ensure accuracy and reliability.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Multi-Platform</h3>
+                    <p>Seamless experience across web, mobile, and tablet with offline reading capability.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>Redefining News Consumption</h2>
+                    <p class="lead">
+                        Definepress is more than just another news app. We're building the future of how people discover, consume, and engage with news content.
+                    </p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Advanced Analytics & Insights</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-users"></i>
+                            <span>Community-Driven Discussions</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-brain"></i>
+                            <span>AI-Powered Summarization</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-language"></i>
+                            <span>Multi-Language Support</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-visual">
+                    <div class="visual-grid">
+                        <div class="visual-item">
+                            <i class="fas fa-newspaper"></i>
+                            <span>10K+ Daily Articles</span>
+                        </div>
+                        <div class="visual-item">
+                            <i class="fas fa-globe-americas"></i>
+                            <span>150+ Countries</span>
+                        </div>
+                        <div class="visual-item">
+                            <i class="fas fa-language"></i>
+                            <span>25+ Languages</span>
+                        </div>
+                        <div class="visual-item">
+                            <i class="fas fa-clock"></i>
+                            <span>24/7 Coverage</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-text">
+                    <h2>Be the First to Know</h2>
+                    <p>Join our exclusive waitlist and get early access to Definepress when we launch.</p>
+                </div>
+                <div class="newsletter-form">
+                    <form id="waitlistForm">
+                        <div class="form-group">
+                            <input type="email" placeholder="Enter your email address" required id="emailInput">
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-text">Join Waitlist</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="form-note">
+                            <i class="fas fa-lock"></i>
+                            <span>We respect your privacy. No spam, ever.</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <i class="fas fa-newspaper"></i>
+                        <span>Definepress</span>
+                    </div>
+                    <p>Redefining how the world consumes news.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>Company</h4>
+                        <a href="#about">About Us</a>
+                        <a href="#careers">Careers</a>
+                        <a href="#press">Press Kit</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Support</h4>
+                        <a href="#help">Help Center</a>
+                        <a href="#contact">Contact Us</a>
+                        <a href="#feedback">Feedback</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Legal</h4>
+                        <a href="#privacy">Privacy Policy</a>
+                        <a href="#terms">Terms of Service</a>
+                        <a href="#cookies">Cookie Policy</a>
+                    </div>
+                </div>
+                <div class="footer-social">
+                    <h4>Follow Us</h4>
+                    <div class="social-links">
+                        <a href="#" class="social-link">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="social-link">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Definepress. All rights reserved. | Currently in Development</p>
+                <div class="development-status">
+                    <div class="status-indicator"></div>
+                    <span>Development Status: Active</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script >
+        /**
+ * DEFINEPRESS - PROFESSIONAL NEWS PLATFORM
+ * Interactive Landing Page JavaScript
+ * Handles animations, form submissions, and user interactions
+ */
+
+document.addEventListener('DOMContentLoaded', function() {
+    // ==========================================
+    // NAVIGATION SCROLL EFFECT
+    // ==========================================
+    
+    const navbar = document.querySelector('.navbar');
+    let lastScrollY = window.scrollY;
+    
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+        
+        if (currentScrollY > 50) {
+            navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+            navbar.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.1)';
+        } else {
+            navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+            navbar.style.boxShadow = 'none';
+        }
+        
+        // Hide/show navbar on scroll
+        if (currentScrollY > lastScrollY && currentScrollY > 100) {
+            navbar.style.transform = 'translateY(-100%)';
+        } else {
+            navbar.style.transform = 'translateY(0)';
+        }
+        
+        lastScrollY = currentScrollY;
+    });
+    
+    // ==========================================
+    // SMOOTH SCROLLING FOR NAVIGATION LINKS
+    // ==========================================
+    
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            
+            if (target) {
+                const offsetTop = target.offsetTop - 80; // Account for fixed navbar
+                
+                window.scrollTo({
+                    top: offsetTop,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+    
+    // ==========================================
+    // FADE-IN ANIMATION ON SCROLL
+    // ==========================================
+    
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, observerOptions);
+    
+    // Add fade-in class to elements and observe them
+    const animateElements = document.querySelectorAll('.feature-card, .visual-item, .about-feature, .section-header');
+    animateElements.forEach(el => {
+        el.classList.add('fade-in');
+        observer.observe(el);
+    });
+    
+    // ==========================================
+    // WAITLIST FORM HANDLING
+    // ==========================================
+    
+    const waitlistForm = document.getElementById('waitlistForm');
+    const emailInput = document.getElementById('emailInput');
+    const submitButton = waitlistForm.querySelector('button[type="submit"]');
+    const buttonText = submitButton.querySelector('.btn-text');
+    const buttonIcon = submitButton.querySelector('i');
+    
+    // Email validation
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+    
+    // Show loading state
+    function showLoading() {
+        submitButton.classList.add('loading');
+        buttonText.textContent = 'Joining...';
+        buttonIcon.className = 'fas fa-spinner fa-spin';
+        submitButton.disabled = true;
+    }
+    
+    // Show success state
+    function showSuccess() {
+        submitButton.classList.remove('loading');
+        submitButton.classList.add('success');
+        buttonText.textContent = 'Welcome Aboard!';
+        buttonIcon.className = 'fas fa-check';
+        
+        setTimeout(() => {
+            resetButton();
+        }, 3000);
+    }
+    
+    // Reset button to initial state
+    function resetButton() {
+        submitButton.classList.remove('loading', 'success');
+        buttonText.textContent = 'Join Waitlist';
+        buttonIcon.className = 'fas fa-arrow-right';
+        submitButton.disabled = false;
+    }
+    
+    // Handle form submission
+    waitlistForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+            showError('Please enter your email address');
+            return;
+        }
+        
+        if (!validateEmail(email)) {
+            showError('Please enter a valid email address');
+            return;
+        }
+        
+        // Simulate API call
+        showLoading();
+        
+        setTimeout(() => {
+            // Store email in localStorage (in real app, this would be sent to server)
+            const waitlist = JSON.parse(localStorage.getItem('definepress-waitlist') || '[]');
+            
+            if (!waitlist.includes(email)) {
+                waitlist.push(email);
+                localStorage.setItem('definepress-waitlist', JSON.stringify(waitlist));
+                showSuccess();
+                emailInput.value = '';
+                
+                // Track signup event
+                console.log('Waitlist signup:', email);
+                
+                // Show thank you message
+                showNotification('Thank you for joining our waitlist! We\'ll notify you when Definepress launches.');
+            } else {
+                showError('You\'re already on our waitlist!');
+            }
+        }, 1500);
+    });
+    
+    // Show error message
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.style.cssText = `
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 14px;
+            border-left: 4px solid #dc2626;
+        `;
+        errorDiv.textContent = message;
+        
+        // Remove existing error message
+        const existingError = waitlistForm.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        waitlistForm.appendChild(errorDiv);
+        
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
+    
+    // ==========================================
+    // CTA BUTTONS FUNCTIONALITY
+    // ==========================================
+    
+    const notifyBtn = document.getElementById('notifyBtn');
+    const learnMoreBtn = document.getElementById('learnMoreBtn');
+    
+    notifyBtn.addEventListener('click', () => {
+        document.getElementById('emailInput').focus();
+        document.querySelector('.newsletter').scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+    
+    learnMoreBtn.addEventListener('click', () => {
+        document.querySelector('#features').scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+    
+    // ==========================================
+    // NOTIFICATION SYSTEM
+    // ==========================================
+    
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : '#dc2626'};
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            z-index: 10000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease-in-out;
+            max-width: 350px;
+            font-weight: 500;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(400px)';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 4000);
+    }
+    
+    // ==========================================
+    // MOBILE MENU TOGGLE (if needed in future)
+    // ==========================================
+    
+    function createMobileMenu() {
+        const mobileMenuBtn = document.createElement('button');
+        mobileMenuBtn.className = 'mobile-menu-btn';
+        mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+        mobileMenuBtn.style.cssText = `
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #2563eb;
+            cursor: pointer;
+        `;
+        
+        const navContainer = document.querySelector('.nav-container');
+        navContainer.appendChild(mobileMenuBtn);
+        
+        // Show mobile menu button on small screens
+        const mediaQuery = window.matchMedia('(max-width: 768px)');
+        
+        function handleMediaQuery(e) {
+            if (e.matches) {
+                mobileMenuBtn.style.display = 'block';
+            } else {
+                mobileMenuBtn.style.display = 'none';
+            }
+        }
+        
+        mediaQuery.addListener(handleMediaQuery);
+        handleMediaQuery(mediaQuery);
+    }
+    
+    // Initialize mobile menu
+    createMobileMenu();
+    
+    // ==========================================
+    // DYNAMIC COUNTERS ANIMATION
+    // ==========================================
+    
+    function animateCounters() {
+        const counters = document.querySelectorAll('.stat-number');
+        
+        counters.forEach(counter => {
+            const finalText = counter.textContent;
+            counter.textContent = '0';
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            counter.textContent = finalText;
+                        }, Math.random() * 1000);
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            observer.observe(counter);
+        });
+    }
+    
+    // Initialize counter animation
+    animateCounters();
+    
+    // ==========================================
+    // EASTER EGG - KONAMI CODE
+    // ==========================================
+    
+    let konamiCode = [];
+    const konamiSequence = [
+        'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+        'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+        'KeyB', 'KeyA'
+    ];
+    
+    document.addEventListener('keydown', (e) => {
+        konamiCode.push(e.code);
+        
+        if (konamiCode.length > konamiSequence.length) {
+            konamiCode.shift();
+        }
+        
+        if (JSON.stringify(konamiCode) === JSON.stringify(konamiSequence)) {
+            showNotification('🎉 Konami Code activated! You\'re a true news ninja!');
+            konamiCode = [];
+            
+            // Add special animation to logo
+            const logo = document.querySelector('.nav-brand .logo');
+            logo.style.animation = 'pulse 0.5s ease-in-out 3';
+        }
+    });
+    
+    // ==========================================
+    // PROGRESSIVE ENHANCEMENT
+    // ==========================================
+    
+    // Add no-js fallback removal
+    document.documentElement.classList.remove('no-js');
+    document.documentElement.classList.add('js');
+    
+    // Performance optimization: Lazy load images if any
+    if ('IntersectionObserver' in window) {
+        const lazyImages = document.querySelectorAll('img[data-src]');
+        
+        const imageObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                    imageObserver.unobserve(img);
+                }
+            });
+        });
+        
+        lazyImages.forEach(img => imageObserver.observe(img));
+    }
+    
+    // ==========================================
+    // CONSOLE EASTER EGG
+    // ==========================================
+    
+    console.log(`
+    ╔══════════════════════════════════════╗
+    ║           🚀 DEFINEPRESS 🚀          ║
+    ║                                      ║
+    ║     Professional News Platform       ║
+    ║          Coming Soon!                ║
+    ║                                      ║
+    ║   Interested in joining our team?    ║
+    ║   Email us at: careers@definepress  ║
+    ╚══════════════════════════════════════╝
+    
+    🔧 Developer Info:
+    • Built with vanilla HTML, CSS, and JS
+    • Optimized for performance and accessibility
+    • Mobile-first responsive design
+    • Blue (#2563eb) & White brand colors
+    `);
+    
+    // Log initialization complete
+    console.log('✅ Definepress landing page initialized successfully!');
+});
+
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
+// Debounce function for performance optimization
+function debounce(func, wait, immediate) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            timeout = null;
+            if (!immediate) func(...args);
+        };
+        const callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func(...args);
+    };
+}
+
+// Throttle function for scroll events
+function throttle(func, limit) {
+    let inThrottle;
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// Check if element is in viewport
+function isInViewport(element) {
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
+// Format number with commas
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Simple analytics tracking (replace with real analytics in production)
+function trackEvent(eventName, properties = {}) {
+    console.log(`📊 Analytics Event: ${eventName}`, properties);
+    
+    // In production, send to analytics service
+    // Example: analytics.track(eventName, properties);
+}
+
+// Export functions for potential external use
+window.DefinePress = {
+    utils: {
+        debounce,
+        throttle,
+        isInViewport,
+        formatNumber,
+        trackEvent
+    }
+};
+        
+    </script>
+</body>
+</html>
