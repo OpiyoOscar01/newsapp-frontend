@@ -9,10 +9,14 @@ import Pagination from '../components/Pagination';
 // import CategoryNavigation from '../components/CategoryNavigation';
 import { LandingPageSkeleton, } from '../components/LoadingSkeletons';
 import './styles/landing.css';
+import { trackVisitor } from '../utils/visitorTracking';
 
 const ARTICLES_PER_PAGE = 3;
 
 const LandingPage: React.FC = () => {
+    useEffect(() => {
+    trackVisitor();
+  }, []);
   const [featuredAds, setFeaturedAds] = useState<Ad[]>([]);
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
   const [categoryAds, setCategoryAds] = useState<Ad[]>([]); // New state for category ads

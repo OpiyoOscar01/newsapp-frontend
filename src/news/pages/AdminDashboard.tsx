@@ -1,12 +1,17 @@
-// src/pages/AdminDashboard.tsx - Add logout functionality
+// src/pages/AdminDashboard.tsx - Updated with visitor analytics
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MediaStackFetcher from '../components/MediaStackFetcher';
+import VisitorAnalytics from '../components/Admin/VisitorAnalytics';
 import { apiClient } from '../services/api/client';
+
+type ActiveTab = 'news-fetcher' | 'analytics' | 'articles' | 'settings';
 
 const AdminDashboard: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('analytics');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,7 +78,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
@@ -103,20 +108,48 @@ const AdminDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
+            <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">Admin Tools</h2>
               <nav className="space-y-2">
-                <button className="w-full text-left px-3 py-2 bg-blue-100 text-blue-700 rounded-md font-medium">
-                  News Fetcher
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`w-full text-left px-3 py-2 rounded-md font-medium transition-colors ${
+                    activeTab === 'analytics'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  📊 Visitor Analytics
                 </button>
-                <button className="w-full text-left px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
-                  Article Management
+                <button
+                  onClick={() => setActiveTab('news-fetcher')}
+                  className={`w-full text-left px-3 py-2 rounded-md font-medium transition-colors ${
+                    activeTab === 'news-fetcher'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  📰 News Fetcher
                 </button>
-                <button className="w-full text-left px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
-                  Analytics
+                <button
+                  onClick={() => setActiveTab('articles')}
+                  className={`w-full text-left px-3 py-2 rounded-md font-medium transition-colors ${
+                    activeTab === 'articles'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  📝 Article Management
                 </button>
-                <button className="w-full text-left px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
-                  Settings
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`w-full text-left px-3 py-2 rounded-md font-medium transition-colors ${
+                    activeTab === 'settings'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  ⚙️ Settings
                 </button>
               </nav>
             </div>
@@ -124,7 +157,20 @@ const AdminDashboard: React.FC = () => {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3">
-            <MediaStackFetcher />
+            {activeTab === 'analytics' && <VisitorAnalytics />}
+            {activeTab === 'news-fetcher' && <MediaStackFetcher />}
+            {activeTab === 'articles' && (
+              <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Article Management</h2>
+                <p className="text-gray-600">Coming soon...</p>
+              </div>
+            )}
+            {activeTab === 'settings' && (
+              <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Settings</h2>
+                <p className="text-gray-600">Coming soon...</p>
+              </div>
+            )}
           </div>
         </div>
       </main>

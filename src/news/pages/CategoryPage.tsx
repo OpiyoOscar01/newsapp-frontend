@@ -11,9 +11,17 @@ import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
 import CompactNewsCard from '../components/CompactNewsCard';
 import { CategoryPageSkeleton } from '../components/LoadingSkeletons';
+import { trackVisitor } from '../utils/visitorTracking';
+
 
 const CategoryPage: React.FC = () => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
+  useEffect(() => {
+    if (categorySlug) {
+      trackVisitor({ categorySlug });
+    }
+  }, [categorySlug]);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   

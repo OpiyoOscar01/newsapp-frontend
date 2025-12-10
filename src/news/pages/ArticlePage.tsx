@@ -10,9 +10,16 @@ import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import { ArticlePageSkeleton } from '../components/LoadingSkeletons';
+import { trackVisitor } from '../utils/visitorTracking';
+
 
 const ArticlePage: React.FC = () => {
   const { articleId } = useParams<{ articleId: string }>();
+  useEffect(() => {
+    if (articleId) {
+      trackVisitor({ articleId });
+    }
+  }, [articleId]);
   const [searchParams, setSearchParams] = useSearchParams();
   // const navigate = useNavigate();
   
