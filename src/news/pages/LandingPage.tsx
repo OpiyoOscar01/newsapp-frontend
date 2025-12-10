@@ -58,11 +58,15 @@ const LandingPage: React.FC = () => {
       // Load 3 ads total: 2 banner ads + 1 sidebar ad + 1 category ad
       const bannerAds = selectMultipleAds('landing', 2, 'banner');
       const sidebar = selectRandomAd('landing', 'sidebar');
-      const categoryAd = selectRandomAd('landing', 'category'); // New category ad
+      const categoryAd = selectRandomAd('landing', 'sidebar'); // New category ad
       
       setFeaturedAds(bannerAds);
       setSidebarAd(sidebar);
-      setCategoryAds([categoryAd]); // Store category ad
+        if (categoryAd) {
+          setCategoryAds([categoryAd]);
+        } else {
+          setCategoryAds([]); // or leave previous value
+        }
 
       // Load categories first
       const categoriesData = await dataService.getCategories();
@@ -316,7 +320,7 @@ const LandingPage: React.FC = () => {
           <div className="w-full bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-1 border-2 border-gray-200">
             <AdBanner 
               ad={featuredAds[0]} 
-              placement="top-banner" 
+              placement="banner" 
               size="leaderboard"
               className="min-h-[90px] md:min-h-[120px]"
             />
@@ -440,7 +444,7 @@ const LandingPage: React.FC = () => {
                           <div className="bg-gradient-to-r from-gray-50 to-primary-50/30 rounded-lg p-2 border-2 border-gray-200">
                             <AdBanner 
                               ad={categoryAds[0]} 
-                              placement="category-middle" 
+                              placement="inline" 
                               size="leaderboard"
                               className="min-h-[100px] md:min-h-[120px]"
                             />

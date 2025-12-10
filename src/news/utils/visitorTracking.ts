@@ -1,3 +1,4 @@
+import { analyticsService, type TrackVisitorPayload } from '../services/news/analyticsService';
 
 export interface VisitorData {
   id: string;
@@ -50,6 +51,16 @@ export interface VisitorStats {
 const STORAGE_KEY = 'visitor_tracking_data';
 const SESSION_KEY = 'visitor_session_id';
 const UNIQUE_VISITOR_KEY = 'visitor_unique_id';
+const PENDING_SYNC_KEY = 'visitor_pending_sync';
+const LAST_SYNC_KEY = 'visitor_last_sync';
+const STATS_CACHE_KEY = 'visitor_stats_cache';
+const STATS_CACHE_EXPIRY_KEY = 'visitor_stats_cache_expiry';
+
+// Configuration
+const SYNC_INTERVAL = 5 * 60 * 1000; // Sync every 5 minutes
+const STATS_CACHE_DURATION = 5 * 60 * 1000; // Cache stats for 5 minutes
+const MAX_LOCAL_STORAGE_SIZE = 1000; // Maximum visits to keep in local storage
+const MAX_PENDING_SYNC_SIZE = 500; // Maximum pending items
 
 // Generate unique ID
 function generateId(): string {
@@ -88,22 +99,26 @@ function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
 function classifyReferrer(referrer: string): 'direct' | 'search' | 'social' | 'external' | 'internal' {
   if (!referrer) return 'direct';
   
-  const currentHost = window.location.hostname;
-  const referrerUrl = new URL(referrer);
-  
-  if (referrerUrl.hostname === currentHost) return 'internal';
-  
-  const searchEngines = ['google', 'bing', 'yahoo', 'duckduckgo', 'baidu'];
-  if (searchEngines.some(engine => referrerUrl.hostname.includes(engine))) {
-    return 'search';
+  try {
+    const currentHost = window.location.hostname;
+    const referrerUrl = new URL(referrer);
+    
+    if (referrerUrl.hostname === currentHost) return 'internal';
+    
+    const searchEngines = ['google', 'bing', 'yahoo', 'duckduckgo', 'baidu'];
+    if (searchEngines.some(engine => referrerUrl.hostname.includes(engine))) {
+      return 'search';
+    }
+    
+    const socialPlatforms = ['facebook', 'twitter', 'linkedin', 'instagram', 'reddit', 'pinterest', 'tiktok', 'youtube'];
+    if (socialPlatforms.some(platform => referrerUrl.hostname.includes(platform))) {
+      return 'social';
+    }
+    
+    return 'external';
+  } catch {
+    return 'direct';
   }
-  
-  const socialPlatforms = ['facebook', 'twitter', 'linkedin', 'instagram', 'reddit', 'pinterest'];
-  if (socialPlatforms.some(platform => referrerUrl.hostname.includes(platform))) {
-    return 'social';
-  }
-  
-  return 'external';
 }
 
 // Determine page type
@@ -114,22 +129,155 @@ function getPageType(pathname: string): 'landing' | 'category' | 'article' | 'ot
   return 'other';
 }
 
-// Track visitor
-export function trackVisitor(options?: {
+// Get pending sync data
+function getPendingSyncData(): TrackVisitorPayload[] {
+  try {
+    const data = localStorage.getItem(PENDING_SYNC_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error retrieving pending sync data:', error);
+    return [];
+  }
+}
+
+// Add to pending sync
+function addToPendingSync(payload: TrackVisitorPayload): void {
+  try {
+    const pending = getPendingSyncData();
+    pending.push(payload);
+    // Keep only last MAX_PENDING_SYNC_SIZE pending items
+    const limited = pending.slice(-MAX_PENDING_SYNC_SIZE);
+    localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(limited));
+  } catch (error) {
+    console.error('Error adding to pending sync:', error);
+  }
+}
+
+// Clear pending sync
+function clearPendingSync(): void {
+  try {
+    localStorage.removeItem(PENDING_SYNC_KEY);
+  } catch (error) {
+    console.error('Error clearing pending sync:', error);
+  }
+}
+
+// Store in local storage as backup
+function storeLocally(visitorData: VisitorData): void {
+  try {
+    const existingData = getAllVisitorData();
+    existingData.push(visitorData);
+    
+    // Keep only last MAX_LOCAL_STORAGE_SIZE visits
+    const limitedData = existingData.slice(-MAX_LOCAL_STORAGE_SIZE);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedData));
+  } catch (error) {
+    console.error('Error storing data locally:', error);
+  }
+}
+
+// Sync pending data to backend
+async function syncPendingData(): Promise<void> {
+  const pending = getPendingSyncData();
+  if (pending.length === 0) return;
+
+  try {
+    console.log(`Syncing ${pending.length} pending visitor events to backend...`);
+    const result = await analyticsService.batchTrackVisitors(pending);
+    
+    if (result.success > 0) {
+      console.log(`Successfully synced ${result.success}/${pending.length} events`);
+      
+      // Only clear successfully synced items
+      if (result.failed === 0) {
+        clearPendingSync();
+      } else {
+        // Keep failed items for retry
+        const failedItems = pending.filter((_, index) => 
+          result.errors.some(error => error.index === index)
+        );
+        localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(failedItems));
+        console.warn(`${result.failed} events failed to sync, will retry later`);
+      }
+      
+      localStorage.setItem(LAST_SYNC_KEY, Date.now().toString());
+    }
+  } catch (error) {
+    console.error('Error syncing pending data:', error);
+    // Don't clear pending data on error - will retry later
+  }
+}
+
+// Initialize automatic sync
+let syncInterval: number | null = null;
+
+function initializeAutoSync(): void {
+  // Clear existing interval
+  if (syncInterval !== null) {
+    clearInterval(syncInterval);
+  }
+
+  // Sync immediately if there's pending data
+  const pending = getPendingSyncData();
+  if (pending.length > 0) {
+    syncPendingData().catch(console.error);
+  }
+
+  // Set up periodic sync
+  syncInterval = window.setInterval(() => {
+    syncPendingData().catch(console.error);
+  }, SYNC_INTERVAL);
+
+  // Sync on page unload (best effort)
+  window.addEventListener('beforeunload', () => {
+    const pending = getPendingSyncData();
+    if (pending.length > 0 && navigator.sendBeacon) {
+      // Use sendBeacon for reliable delivery on page unload
+      try {
+        const data = JSON.stringify(pending[pending.length - 1]);
+        const blob = new Blob([data], { type: 'application/json' });
+        navigator.sendBeacon('/api/v1/analytics/visitors/track', blob);
+      } catch (error) {
+        console.error('Failed to send beacon:', error);
+      }
+    }
+  });
+
+  // Sync when page becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      const pending = getPendingSyncData();
+      if (pending.length > 0) {
+        syncPendingData().catch(console.error);
+      }
+    }
+  });
+}
+
+// Initialize on module load
+if (typeof window !== 'undefined') {
+  initializeAutoSync();
+}
+
+/**
+ * Track visitor with backend integration and local storage fallback
+ */
+export async function trackVisitor(options?: {
   categorySlug?: string;
   articleId?: string;
-}): void {
+}): Promise<void> {
   try {
     const pathname = window.location.pathname;
     const pageType = getPageType(pathname);
+    const sessionId = getSessionId();
+    const uniqueVisitorId = getUniqueVisitorId();
     
-    const visitorData: VisitorData = {
-      id: generateId(),
-      sessionId: getSessionId(),
-      timestamp: new Date().toISOString(),
+    const payload: TrackVisitorPayload = {
+      sessionId,
+      uniqueVisitorId,
       page: pathname,
       pageType,
-      referrer: document.referrer,
+      referrer: document.referrer || undefined,
       referrerType: classifyReferrer(document.referrer),
       userAgent: navigator.userAgent,
       screenResolution: `${window.screen.width}x${window.screen.height}`,
@@ -141,21 +289,42 @@ export function trackVisitor(options?: {
       articleId: options?.articleId,
     };
     
-    // Store in localStorage
-    const existingData = getAllVisitorData();
-    existingData.push(visitorData);
+    // Create local backup immediately
+    const localData: VisitorData = {
+      id: generateId(),
+      sessionId,
+      timestamp: new Date().toISOString(),
+      page: pathname,
+      pageType,
+      referrer: document.referrer,
+      referrerType: payload.referrerType,
+      userAgent: navigator.userAgent,
+      screenResolution: payload.screenResolution || '',
+      deviceType: payload.deviceType,
+      location: payload.location,
+      categorySlug: options?.categorySlug,
+      articleId: options?.articleId,
+    };
     
-    // Keep only last 1000 visits to prevent storage overflow
-    const limitedData = existingData.slice(-1000);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(limitedData));
+    storeLocally(localData);
     
-    console.log('Visitor tracked:', visitorData);
+    // Try to send to backend immediately
+    try {
+      await analyticsService.trackVisitor(payload);
+      console.log('Visitor tracked successfully');
+    } catch (error) {
+      // If backend fails, add to pending sync queue
+      console.warn('Backend tracking failed, adding to pending sync:', error);
+      addToPendingSync(payload);
+    }
   } catch (error) {
     console.error('Error tracking visitor:', error);
   }
 }
 
-// Get all visitor data
+/**
+ * Get all visitor data from local storage
+ */
 export function getAllVisitorData(): VisitorData[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -166,8 +335,53 @@ export function getAllVisitorData(): VisitorData[] {
   }
 }
 
-// Get visitor statistics
-export function getVisitorStats(days: number = 7): VisitorStats {
+/**
+ * Get visitor statistics with backend integration and local fallback
+ */
+export async function getVisitorStats(days: number = 7): Promise<VisitorStats> {
+  // Check cache first
+  const cacheKey = `${STATS_CACHE_KEY}_${days}`;
+  const cacheExpiryKey = `${STATS_CACHE_EXPIRY_KEY}_${days}`;
+  
+  try {
+    const cachedStats = localStorage.getItem(cacheKey);
+    const cacheExpiry = localStorage.getItem(cacheExpiryKey);
+    
+    if (cachedStats && cacheExpiry) {
+      const expiryTime = parseInt(cacheExpiry);
+      if (Date.now() < expiryTime) {
+        console.log('Returning cached stats');
+        return JSON.parse(cachedStats);
+      }
+    }
+  } catch (error) {
+    console.error('Error reading stats cache:', error);
+  }
+
+  // Try to get from backend
+  try {
+    console.log('Fetching stats from backend...');
+    const stats = await analyticsService.getVisitorStats(days);
+    
+    // Cache the results
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(stats));
+      localStorage.setItem(cacheExpiryKey, (Date.now() + STATS_CACHE_DURATION).toString());
+    } catch (error) {
+      console.error('Error caching stats:', error);
+    }
+    
+    return stats;
+  } catch (error) {
+    console.warn('Failed to get stats from backend, using local calculation:', error);
+    return calculateLocalStats(days);
+  }
+}
+
+/**
+ * Calculate statistics from local storage data
+ */
+function calculateLocalStats(days: number): VisitorStats {
   const allData = getAllVisitorData();
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -175,9 +389,8 @@ export function getVisitorStats(days: number = 7): VisitorStats {
   // Filter data by date range
   const recentData = allData.filter(v => new Date(v.timestamp) >= cutoffDate);
   
-  // Calculate unique visitors
+  // Calculate unique visitors (by sessionId)
   const uniqueSessions = new Set(recentData.map(v => v.sessionId));
-  const uniqueVisitors = localStorage.getItem(UNIQUE_VISITOR_KEY) ? 1 : 0;
   
   // Page views by type
   const pageViews = {
@@ -270,20 +483,62 @@ export function getVisitorStats(days: number = 7): VisitorStats {
   };
 }
 
-// Export data for backend
-export function exportVisitorDataForBackend(): {
+/**
+ * Get real-time visitor count from backend
+ */
+export async function getRealtimeVisitors() {
+  try {
+    return await analyticsService.getRealtimeVisitors();
+  } catch (error) {
+    console.error('Failed to get realtime visitors:', error);
+    // Fallback to local calculation
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const allData = getAllVisitorData();
+    const todayData = allData.filter(v => new Date(v.timestamp) >= todayStart);
+    const uniqueSessions = new Set(todayData.map(v => v.sessionId));
+    
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const activeData = allData.filter(v => new Date(v.timestamp) >= fiveMinutesAgo);
+    const activeSessions = new Set(activeData.map(v => v.sessionId));
+    
+    return {
+      total_today: todayData.length,
+      unique_today: uniqueSessions.size,
+      active_now: activeSessions.size,
+    };
+  }
+}
+
+/**
+ * Export data for backend synchronization
+ */
+export async function exportVisitorDataForBackend(days: number = 30): Promise<{
   data: VisitorData[];
   stats: VisitorStats;
   exportedAt: string;
-} {
-  return {
-    data: getAllVisitorData(),
-    stats: getVisitorStats(30), // Last 30 days
-    exportedAt: new Date().toISOString(),
-  };
+}> {
+  try {
+    const backendData = await analyticsService.exportVisitorData(days);
+    return {
+      data: backendData.raw_data,
+      stats: backendData.stats,
+      exportedAt: backendData.exported_at,
+    };
+  } catch (error) {
+    console.warn('Failed to export from backend, using local data:', error);
+    return {
+      data: getAllVisitorData(),
+      stats: await getVisitorStats(days),
+      exportedAt: new Date().toISOString(),
+    };
+  }
 }
 
-// Clear old data (optional cleanup)
+/**
+ * Clear old visitor data from local storage
+ */
 export function clearOldVisitorData(days: number = 30): void {
   const allData = getAllVisitorData();
   const cutoffDate = new Date();
@@ -291,4 +546,42 @@ export function clearOldVisitorData(days: number = 30): void {
   
   const recentData = allData.filter(v => new Date(v.timestamp) >= cutoffDate);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(recentData));
+  
+  console.log(`Cleared ${allData.length - recentData.length} old visitor records`);
+}
+
+/**
+ * Force sync pending data to backend
+ */
+export async function forceSyncToBackend(): Promise<void> {
+  await syncPendingData();
+}
+
+/**
+ * Get sync status
+ */
+export function getSyncStatus(): {
+  pendingCount: number;
+  lastSyncTime: Date | null;
+} {
+  const pending = getPendingSyncData();
+  const lastSync = localStorage.getItem(LAST_SYNC_KEY);
+  
+  return {
+    pendingCount: pending.length,
+    lastSyncTime: lastSync ? new Date(parseInt(lastSync)) : null,
+  };
+}
+
+/**
+ * Clear all stats cache
+ */
+export function clearStatsCache(): void {
+  const keys = Object.keys(localStorage);
+  keys.forEach(key => {
+    if (key.startsWith(STATS_CACHE_KEY) || key.startsWith(STATS_CACHE_EXPIRY_KEY)) {
+      localStorage.removeItem(key);
+    }
+  });
+  console.log('Stats cache cleared');
 }

@@ -3,6 +3,9 @@ import {
   getVisitorStats, 
   exportVisitorDataForBackend, 
   clearOldVisitorData,
+  getSyncStatus,
+  forceSyncToBackend,
+  clearStatsCache,
   type VisitorStats 
 } from '../../utils/visitorTracking';
 
@@ -10,48 +13,107 @@ const VisitorAnalytics: React.FC = () => {
   const [stats, setStats] = useState<VisitorStats | null>(null);
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
   const [loading, setLoading] = useState(true);
+  const [syncStatus, setSyncStatus] = useState({ pendingCount: 0, lastSyncTime: null as Date | null });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadStats();
+    updateSyncStatus();
+    
+    // Update sync status every 30 seconds
+    const interval = setInterval(updateSyncStatus, 30000);
+    return () => clearInterval(interval);
   }, [timeRange]);
 
-  const loadStats = () => {
+  const loadStats = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const visitorStats = getVisitorStats(timeRange);
+      const visitorStats = await getVisitorStats(timeRange);
       setStats(visitorStats);
     } catch (error) {
       console.error('Error loading visitor stats:', error);
+      setError('Failed to load visitor statistics. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExportData = () => {
-    const exportData = exportVisitorDataForBackend();
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `visitor-data-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const updateSyncStatus = () => {
+    const status = getSyncStatus();
+    setSyncStatus(status);
+  };
+
+  const handleExportData = async () => {
+    try {
+      setLoading(true);
+      const exportData = await exportVisitorDataForBackend(timeRange);
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `visitor-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      alert('Data exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClearOldData = () => {
-    if (window.confirm('Clear visitor data older than 30 days?')) {
+    if (window.confirm('Clear visitor data older than 30 days? This will only affect local storage.')) {
       clearOldVisitorData(30);
+      clearStatsCache();
       loadStats();
       alert('Old data cleared successfully');
     }
   };
 
-  if (loading) {
+  const handleForceSync = async () => {
+    try {
+      setLoading(true);
+      await forceSyncToBackend();
+      updateSyncStatus();
+      clearStatsCache();
+      await loadStats();
+      alert('Sync completed successfully');
+    } catch (error) {
+      console.error('Sync failed:', error);
+      alert('Failed to sync data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    clearStatsCache();
+    loadStats();
+  };
+
+  if (loading && !stats) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error && !stats) {
+    return (
+      <div className="p-8 text-center">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button
+          onClick={loadStats}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
@@ -71,13 +133,19 @@ const VisitorAnalytics: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Visitor Analytics</h2>
           <p className="text-gray-600">Track visitor behavior and site performance</p>
+          {syncStatus.pendingCount > 0 && (
+            <p className="text-sm text-orange-600 mt-1">
+              {syncStatus.pendingCount} events pending sync
+            </p>
+          )}
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(Number(e.target.value) as 7 | 30 | 90)}
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+            disabled={loading}
           >
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
@@ -85,20 +153,48 @@ const VisitorAnalytics: React.FC = () => {
           </select>
           
           <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh data"
+          >
+            {loading ? '⟳' : '↻'} Refresh
+          </button>
+
+          {syncStatus.pendingCount > 0 && (
+            <button
+              onClick={handleForceSync}
+              disabled={loading}
+              className="px-4 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50"
+              title={`Sync ${syncStatus.pendingCount} pending events`}
+            >
+              Sync Now
+            </button>
+          )}
+          
+          <button
             onClick={handleExportData}
-            className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
+            disabled={loading}
+            className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
           >
             Export Data
           </button>
           
           <button
             onClick={handleClearOldData}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+            disabled={loading}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
           >
             Clear Old
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -106,7 +202,7 @@ const VisitorAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Visits</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalVisits}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalVisits.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +217,7 @@ const VisitorAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Unique Visitors</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.uniqueVisitors}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.uniqueVisitors.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +231,7 @@ const VisitorAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Article Views</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.article}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.article.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +245,7 @@ const VisitorAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Category Views</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.category}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.category.toLocaleString()}</p>
             </div>
             <div className="p-3 bg-orange-100 rounded-full">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,25 +261,25 @@ const VisitorAnalytics: React.FC = () => {
         <h3 className="text-lg font-semibold mb-4">Page Views Breakdown</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">{stats.pageViews.landing}</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.pageViews.landing.toLocaleString()}</p>
             <p className="text-sm text-gray-600">Landing Page</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.pageViews.category}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.pageViews.category.toLocaleString()}</p>
             <p className="text-sm text-gray-600">Categories</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">{stats.pageViews.article}</p>
+            <p className="text-2xl font-bold text-purple-600">{stats.pageViews.article.toLocaleString()}</p>
             <p className="text-sm text-gray-600">Articles</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-gray-600">{stats.pageViews.other}</p>
+            <p className="text-2xl font-bold text-gray-600">{stats.pageViews.other.toLocaleString()}</p>
             <p className="text-sm text-gray-600">Other Pages</p>
           </div>
         </div>
       </div>
 
-      {/* Referrer Sources */}
+      {/* Referrer Sources and Device Types */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold mb-4">Traffic Sources</h3>
@@ -203,8 +299,8 @@ const VisitorAnalytics: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[60px] text-right">
-                    {count} ({percentage}%)
+                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[80px] text-right">
+                    {count.toLocaleString()} ({percentage}%)
                   </span>
                 </div>
               );
@@ -234,8 +330,8 @@ const VisitorAnalytics: React.FC = () => {
                       />
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[60px] text-right">
-                    {count} ({percentage}%)
+                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[80px] text-right">
+                    {count.toLocaleString()} ({percentage}%)
                   </span>
                 </div>
               );
@@ -245,35 +341,37 @@ const VisitorAnalytics: React.FC = () => {
       </div>
 
       {/* Top Pages */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Top Pages</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Page
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Views
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {stats.topPages.slice(0, 5).map((page, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-mono">
-                    {page.page}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 text-right font-semibold">
-                    {page.views}
-                  </td>
+      {stats.topPages.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold mb-4">Top Pages</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Page
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Views
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {stats.topPages.slice(0, 10).map((page, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                      {page.page}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 text-right font-semibold">
+                      {page.views.toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Top Categories and Articles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -283,8 +381,8 @@ const VisitorAnalytics: React.FC = () => {
             <div className="space-y-2">
               {stats.topCategories.slice(0, 5).map((cat, index) => (
                 <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <span className="text-gray-700 capitalize">{cat.category}</span>
-                  <span className="text-sm font-semibold text-gray-900">{cat.views} views</span>
+                  <span className="text-gray-700 capitalize truncate">{cat.category}</span>
+                  <span className="text-sm font-semibold text-gray-900 ml-2">{cat.views.toLocaleString()} views</span>
                 </div>
               ))}
             </div>
@@ -298,7 +396,7 @@ const VisitorAnalytics: React.FC = () => {
               {stats.topArticles.slice(0, 5).map((art, index) => (
                 <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                   <span className="text-gray-700 font-mono text-sm truncate">{art.articleId}</span>
-                  <span className="text-sm font-semibold text-gray-900 ml-2">{art.views} views</span>
+                  <span className="text-sm font-semibold text-gray-900 ml-2">{art.views.toLocaleString()} views</span>
                 </div>
               ))}
             </div>
@@ -328,6 +426,13 @@ const VisitorAnalytics: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Sync Status Footer */}
+      {syncStatus.lastSyncTime && (
+        <div className="text-center text-sm text-gray-500">
+          Last synced: {syncStatus.lastSyncTime.toLocaleString()}
+        </div>
+      )}
     </div>
   );
 };

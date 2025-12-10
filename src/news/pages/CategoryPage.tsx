@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getArticlesByCategory, getCategories } from '../data/dataService';
-import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
+import { selectRandomAd } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
 import { filterArticlesBySearch, sortArticles } from '../utils/filterArticles';
 import { type Ad, type Article } from '../types';
@@ -25,8 +25,10 @@ const CategoryPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   
+  // Ad states - now with 2 ads total
+  const [topBannerAd, setTopBannerAd] = useState<Ad | null>(null);
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  const [inlineAds, setInlineAds] = useState<Ad[]>([]);
+  
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
@@ -66,12 +68,12 @@ const CategoryPage: React.FC = () => {
         const articles = await getArticlesByCategory(categorySlug);
         setAllCategoryArticles(articles);
 
-        // Load ads
+        // Load ads - 2 ads: top banner + sidebar
+        const topBanner = selectRandomAd(categorySlug, 'banner');
         const sidebar = selectRandomAd(categorySlug, 'sidebar');
-        const inline = selectMultipleAds(categorySlug, 2, 'inline');
         
+        setTopBannerAd(topBanner);
         setSidebarAd(sidebar);
-        setInlineAds(inline);
       } catch (err) {
         console.error('Failed to load category:', err);
         setError('Failed to load category content');
@@ -136,22 +138,6 @@ const CategoryPage: React.FC = () => {
     window.location.reload();
   };
 
-  // Create articles with inline ads inserted
-  const articlesWithAds = useMemo(() => {
-    const items: (Article | Ad)[] = [];
-    
-    paginatedData.items.forEach((article, index) => {
-      items.push(article);
-      
-      // Insert inline ad after every 3rd article
-      if ((index + 1) % 3 === 0 && inlineAds[Math.floor(index / 3)]) {
-        items.push(inlineAds[Math.floor(index / 3)]);
-      }
-    });
-    
-    return items;
-  }, [paginatedData.items, inlineAds]);
-
   if (loading) {
     return <CategoryPageSkeleton />;
   }
@@ -186,15 +172,28 @@ const CategoryPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      {/* Ad 1: Top Banner Ad - Full width, responsive */}
+      {topBannerAd && (
+        <div className="mb-6 md:mb-8">
+          <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
+            <AdBanner 
+              ad={topBannerAd} 
+              placement={`banner`}
+              className="w-full"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* Main Content */}
         <div className="lg:col-span-3">
           {/* Category Header */}
-          <div className="mb-1">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 capitalize">
+          <div className="mb-6">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 capitalize">
               {category.name}
             </h1>
-            <p className="text-lg text-gray-600 mb-1">
+            <p className="text-base md:text-lg text-gray-600 mb-4">
               {category.description}
             </p>
             <div className="w-16 h-1 bg-primary-600 rounded"></div>
@@ -211,7 +210,7 @@ const CategoryPage: React.FC = () => {
                 />
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <label htmlFor="sort-select" className="text-sm font-medium text-gray-700 whitespace-nowrap">
                   Sort by:
                 </label>
@@ -294,41 +293,29 @@ const CategoryPage: React.FC = () => {
           {/* Articles */}
           {paginatedData.items.length > 0 ? (
             <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {articlesWithAds.map((item, index) => {
-                  if ("clickUrl" in item) {
-                    // It's an ad
-                    return (
-                      <div key={`ad-${item.id}-${index}`} className="md:col-span-2">
-                        <AdBanner ad={item} placement={categorySlug || "category"} />
-                      </div>
-                    );
-                  } else {
-                    // It's an article → Show compact on mobile, regular on md+
-                    return (
-                      <div key={item.id}>
-                        {/* Mobile version */}
-                        <div className="md:hidden">
-                          <CompactNewsCard article={item} />
-                        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                {paginatedData.items.map((article) => (
+                  <div key={article.id}>
+                    {/* Mobile version */}
+                    <div className="md:hidden">
+                      <CompactNewsCard article={article} />
+                    </div>
 
-                        {/* Desktop version */}
-                        <div className="hidden md:block">
-                          <NewsCard
-                            article={item}
-                            variant="compact"
-                            showImage={true}
-                          />
-                        </div>
-                      </div>
-                    );
-                  }
-                })}
+                    {/* Desktop version */}
+                    <div className="hidden md:block">
+                      <NewsCard
+                        article={article}
+                        variant="compact"
+                        showImage={true}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Pagination */}
               {paginatedData.totalPages > 1 && (
-                <div className="mt-3">
+                <div className="mt-8">
                   <Pagination
                     currentPage={paginatedData.currentPage}
                     totalPages={paginatedData.totalPages}
@@ -365,17 +352,22 @@ const CategoryPage: React.FC = () => {
 
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-24 space-y-8">
-            {/* Sidebar Ad */}
+          <div className="sticky top-24 space-y-6 lg:space-y-8">
+            {/* Ad 2: Sidebar Ad - Responsive positioning */}
             {sidebarAd && (
-              <AdBanner ad={sidebarAd} placement={categorySlug || 'category'} />
+              <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
+                <AdBanner 
+                  ad={sidebarAd} 
+                  placement={`sidebar`}
+                  className="w-full"
+                />
+              </div>
             )}
 
             {/* Popular Categories */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Categories</h3>
               <div className="space-y-2">
-                {/* This would need to be populated with other categories */}
                 <button
                   onClick={() => navigate('/')}
                   className="block w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors"

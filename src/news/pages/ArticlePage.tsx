@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { getArticleById, getRelatedArticles, recordArticleView } from '../data/dataService';
-import { selectRandomAd, selectMultipleAds } from '../utils/randomAdSelector';
+import { selectRandomAd } from '../utils/randomAdSelector';
 import { formatFullDate } from '../utils/formatDate';
 import { paginate } from '../utils/paginationHelpers';
 import { type Ad } from '../types';
@@ -21,11 +21,11 @@ const ArticlePage: React.FC = () => {
     }
   }, [articleId]);
   const [searchParams, setSearchParams] = useSearchParams();
-  // const navigate = useNavigate();
   
+  // Ad states - 2 ads: sidebar + bottom
   const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  const [inlineAds, setInlineAds] = useState<Ad[]>([]);
   const [bottomAd, setBottomAd] = useState<Ad | null>(null);
+  
   const [relatedPage, setRelatedPage] = useState(parseInt(searchParams.get('relatedPage') || '1'));
   const [relatedItemsPerPage, setRelatedItemsPerPage] = useState(parseInt(searchParams.get('relatedPerPage') || '2'));
   
@@ -63,13 +63,11 @@ const ArticlePage: React.FC = () => {
         const related = await getRelatedArticles(articleData, 12);
         setAllRelatedArticles(related);
 
-        // Load ads
+        // Load ads - 2 ads: sidebar + bottom
         const sidebar = selectRandomAd(articleData.category, 'sidebar');
-        const inline = selectMultipleAds('article', 2, 'inline');
         const bottom = selectRandomAd(articleData.category, 'bottom');
         
         setSidebarAd(sidebar);
-        setInlineAds(inline);
         setBottomAd(bottom);
       } catch (err) {
         console.error('Failed to load article:', err);
@@ -160,8 +158,8 @@ const ArticlePage: React.FC = () => {
   const contentParagraphs = article.content.split('\n\n');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
         {/* Main Content */}
         <article className="lg:col-span-3">
           {/* Breadcrumb */}
@@ -214,10 +212,6 @@ const ArticlePage: React.FC = () => {
               {article.title}
             </h1>
             
-            {/* <p className="text-xl text-gray-600 mb-6 leading-relaxed">
-              {article.summary}
-            </p> */}
-            
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -240,12 +234,6 @@ const ArticlePage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              
-              {/* <ShareButtons
-                url={currentUrl}
-                title={article.title}
-                description={article.summary}
-              /> */}
             </div>
           </header>
 
@@ -262,24 +250,25 @@ const ArticlePage: React.FC = () => {
             />
           </div>
 
+          {/* Ad 1: Top Content Ad - Appears after featured image on mobile, in sidebar on desktop */}
+          {sidebarAd && (
+            <div className="mb-8 lg:hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-primary-50/30 rounded-lg p-2 border border-gray-200 shadow-sm">
+                <AdBanner 
+                  ad={sidebarAd} 
+                  placement="inline"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Article Content */}
           <div className="prose prose-lg max-w-none mb-12">
             {contentParagraphs.map((paragraph: string, index: number) => (
-              <div key={index}>
-                <p className="text-gray-800 leading-relaxed mb-6 text-lg">
-                  {paragraph}
-                </p>
-                
-                {/* Insert inline ad after 2nd and 4th paragraphs */}
-                {((index === 1 && inlineAds[0]) || (index === 3 && inlineAds[1])) && (
-                  <div className="my-8">
-                    <AdBanner 
-                      ad={index === 1 ? inlineAds[0] : inlineAds[1]} 
-                      placement="article" 
-                    />
-                  </div>
-                )}
-              </div>
+              <p key={index} className="text-gray-800 leading-relaxed mb-6 text-lg">
+                {paragraph}
+              </p>
             ))}
           </div>
 
@@ -313,6 +302,19 @@ const ArticlePage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Ad 2: Bottom Content Ad - Full width, appears before related articles */}
+          {bottomAd && (
+            <div className="mb-12">
+              <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
+                <AdBanner 
+                  ad={bottomAd} 
+                  placement="bottom"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Related Articles with Pagination */}
           {allRelatedArticles.length > 0 && (
@@ -374,10 +376,18 @@ const ArticlePage: React.FC = () => {
 
         {/* Sidebar */}
         <aside className="lg:col-span-1">
-          <div className="sticky top-24 space-y-8">
-            {/* Sidebar Ad */}
+          <div className="sticky top-24 space-y-6 lg:space-y-8">
+            {/* Ad 1: Sidebar Ad - Desktop only, sticky */}
             {sidebarAd && (
-              <AdBanner ad={sidebarAd} placement="article" />
+              <div className="hidden lg:block">
+                <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
+                  <AdBanner 
+                    ad={sidebarAd} 
+                    placement="sidebar"
+                    className="w-full"
+                  />
+                </div>
+              </div>
             )}
 
             {/* Article Info */}
@@ -433,13 +443,6 @@ const ArticlePage: React.FC = () => {
           </div>
         </aside>
       </div>
-
-      {/* Bottom Ad (Mobile) */}
-      {bottomAd && (
-        <div className="mt-12 lg:hidden">
-          <AdBanner ad={bottomAd} placement="article" />
-        </div>
-      )}
     </div>
   );
 };

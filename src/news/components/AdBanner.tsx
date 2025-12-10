@@ -2,10 +2,18 @@ import React, { useEffect } from 'react';
 import {type Ad } from '../types';
 import { trackAdImpression, trackAdClick } from '../utils/randomAdSelector';
 
-interface AdBannerProps {
+export interface AdBannerProps {
   ad: Ad;
-  placement: string;
+  placement:
+    | "banner"
+    | "sidebar"
+    | "inline"
+    | "bottom"
+    | "category"
+    | "landing"
+    | "search";
   className?: string;
+  size?: string; // if you added size earlier
 }
 
 const AdBanner: React.FC<AdBannerProps> = ({ ad, placement, className = '' }) => {
