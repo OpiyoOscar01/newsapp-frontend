@@ -417,7 +417,7 @@ const Navbar: React.FC = () => {
 
                     {/* Admin Section in Mobile Menu */}
                     <div className="border-t border-gray-200 mt-4 pt-4">
-                      {!authLoading && user ? (
+                      {!authLoading && user && (
                         <>
                           <button
                             onClick={handleAdminDashboard}
@@ -449,35 +449,38 @@ const Navbar: React.FC = () => {
                             <span>Sign Out</span>
                           </button>
                         </>
-                      ) : (
-                        <button
-                          onClick={handleLogin}
-                          className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 border-l-4 border-transparent transition-all duration-200"
-                        >
-                          {/* <svg 
-                            className="w-5 h-5 mr-3 text-primary-400 group-hover:text-primary-500"
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                          </svg> */}
-                          {/* <span>Admin Login</span> */}
-                        </button>
-                      )}
+                      ) 
+                      // : (
+                      //   // <button
+                      //   //   onClick={handleLogin}
+                      //   //   className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 border-l-4 border-transparent transition-all duration-200"
+                      //   // >
+                      //   //   {/* <svg 
+                      //   //     className="w-5 h-5 mr-3 text-primary-400 group-hover:text-primary-500"
+                      //   //     fill="none" 
+                      //   //     stroke="currentColor" 
+                      //   //     viewBox="0 0 24 24"
+                      //   //   >
+                      //   //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                      //   //   </svg> 
+                      //   //    <span>Admin Login</span> */}
+                      //   // </button>
+                      // )}
+                    }
                     </div>
                   </nav>
                 </div>
               </div>
 
               {/* Footer Section */}
-              <div className="px-6 py-4 border-t border-gray-100">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 text-xs">
-                    © {new Date().getFullYear()} DefinePress
-                  </span>
+              <div className="px-6 py-4 border-gray-100">
+                  <div className="flex items-center justify-center text-sm">
+                    <span className="text-gray-500 text-xs">
+                      © {new Date().getFullYear()} DefinePress
+                    </span>
+                  </div>
                 </div>
-              </div>
+
             </div>
           </div>
         </>
