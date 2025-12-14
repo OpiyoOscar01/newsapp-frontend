@@ -410,27 +410,40 @@ const LandingPage: React.FC = () => {
               >
                 <div className="w-full">
                   <div className="flex items-center justify-between mb-8">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 capitalize">
-                          {category.name}
-                        </h2>
-                        <span className="hidden sm:inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
-                          {categoryArticles.get(category.slug)?.length || 0} articles
-                        </span>
-                      </div>
-                      <div className="w-20 h-1.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-full"></div>
-                    </div>
-                    <Link
-                      to={`/category/${category.slug}`}
-                      className="group flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold text-sm md:text-base transition-colors"
-                    >
-                      <span>Explore all</span>
-                      <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                  </div>
+              
+              {/* Category title */}
+              <div className="flex items-center space-x-3">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 capitalize">
+                  {category.name}
+                </h2>
+
+                <span className="hidden sm:inline-block px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">
+                  {categoryArticles.get(category.slug)?.length || 0} articles
+                </span>
+              </div>
+
+              {/* Explore all */}
+              <Link
+                to={`/category/${category.slug}`}
+                className="group flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-semibold text-sm md:text-base transition-colors"
+              >
+                <span className="inline-block text-blue-500 underline whitespace-nowrap sm:mb-3">
+                  Explore all
+                </span>
+                <svg
+                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+
+            {/* Optional underline below title */}
+            <div className="w-20 h-1.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-full"></div>
+
 
                   <div className="w-full mb-8">
                     {renderCategoryLayout(layoutConfig, paginatedArticles)}
