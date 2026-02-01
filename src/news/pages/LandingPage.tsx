@@ -1,3 +1,4 @@
+// pages/LandingPage.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { dataService } from "../data/dataService";
@@ -29,7 +30,6 @@ const LandingPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // "First ad that comes after the big container" => we will render it LAST.
   const [renderDeferredFinalAd, setRenderDeferredFinalAd] = useState(false);
   const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -196,7 +196,7 @@ const LandingPage: React.FC = () => {
 
       {/* Category Sections */}
       <div className="space-y-10 md:space-y-20">
-        {/* BIG (general) */}
+        {/* BIG Container (General Category) */}
         {generalCategory && (
           <section className="scroll-mt-20" data-category={generalCategory.slug}>
             <div className="w-full">
@@ -225,10 +225,13 @@ const LandingPage: React.FC = () => {
           </section>
         )}
 
-        {/* NORMAL containers (NO explore-all links in headers anymore) */}
-        {remainingCategories.map((category) => {
+        {/* NORMAL Containers with ad insertion */}
+        {remainingCategories.map((category, index) => {
           const articles = getCategorySlice(category.slug, false);
           if (articles.length === 0) return null;
+
+          // Insert horizontal ad after every two NormalContainers
+          const shouldInsertAd = (index + 1) % 2 === 0;
 
           return (
             <section key={category.id} className="scroll-mt-20" data-category={category.slug}>
@@ -247,7 +250,12 @@ const LandingPage: React.FC = () => {
                 <div className="w-20 h-1.5 bg-gradient-to-r from-primary-600 to-primary-400 rounded-full" />
 
                 <div className="w-full mt-8">
-                  <NormalContainer articles={articles} exploreHref={`/category/${category.slug}`} />
+                  <NormalContainer 
+                    articles={articles} 
+                    exploreHref={`/category/${category.slug}`}
+                    shouldInsertAd={shouldInsertAd}
+                    index={index}
+                  />
                 </div>
               </div>
             </section>
@@ -258,7 +266,7 @@ const LandingPage: React.FC = () => {
       {/* Sentinel used to trigger deferred final ad */}
       <div ref={bottomSentinelRef} className="h-px w-full" />
 
-      {/* Deferred: first after-big-container banner ad rendered LAST */}
+      {/* Deferred: Banner ad that appears after BigContainer (moved from before) */}
       {renderDeferredFinalAd && betweenAd && (
         <section className="w-full my-10 md:my-12">
           <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border-2 border-gray-200">
@@ -267,7 +275,7 @@ const LandingPage: React.FC = () => {
         </section>
       )}
 
-      {/* Newsletter Section (unchanged) */}
+      {/* Newsletter Section */}
       <section className="mt-16 md:mt-24">
         <div className="relative bg-gradient-to-br from-primary-50 via-white to-primary-50/30 rounded-3xl overflow-hidden shadow-xl border border-primary-100">
           <div className="absolute inset-0 bg-grid-primary/[0.03] bg-[size:20px_20px]" />

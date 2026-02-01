@@ -24,35 +24,20 @@ const BigContainer: React.FC<BigContainerProps> = ({
     );
   }
 
-  /**
-   * Requirements:
-   * - Desktop: main big card (left), right column has one small card (top-right),
-   *   and the AD spans down into the 2nd row occupying the “third-slot” position.
-   *   Bottom row (under main): only TWO cards remain (because ad took the 3rd slot).
-   * - Mobile: 6 cards stacked.
-   */
+  // Based on the image: Main card (left), side ad (top-right), and 3 cards in bottom row
   const main = articles[0];
   const rightTop = articles[1];
-
   const bottomLeft = articles[2];
   const bottomMid = articles[3];
-  // On desktop, we intentionally do NOT place a bottom-right third card.
-  // On mobile, we show 6 total:
-  const mobile4 = articles[4];
+  const bottomRight = articles[4];
   const mobile5 = articles[5];
 
   return (
     <div className="w-full">
-      {/* Desktop grid:
-          col 1-2: main card
-          col 3: right column, where:
-            - row 1: small card
-            - row 2: ad (spans down; replaces 3rd slot in row 2)
-          row 2 under main: two cards only
-      */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-4 lg:gap-6">
-        {/* MAIN (image on top, text below) */}
-        <div className="lg:col-span-2 lg:row-span-1">
+      {/* Desktop grid - 3 columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+        {/* MAIN CARD - spans 2 columns, row 1 */}
+        <div className="lg:col-span-2">
           <NewsCard
             article={main}
             variant="large"
@@ -62,54 +47,15 @@ const BigContainer: React.FC<BigContainerProps> = ({
           />
         </div>
 
-        {/* RIGHT TOP CARD */}
-        <div className="lg:col-span-1 lg:row-start-1 lg:col-start-3">
-          {rightTop && (
-            <NewsCard
-              article={rightTop}
-              variant="compact"
-              orientation="horizontal"
-              hideMetaMobile={true}
-              showCategory={true}
-            />
-          )}
-        </div>
-
-        {/* BOTTOM LEFT (under main) */}
-        <div className="lg:col-span-1 lg:row-start-2 lg:col-start-1">
-          {bottomLeft && (
-            <NewsCard
-              article={bottomLeft}
-              variant="compact"
-              orientation="horizontal"
-              hideMetaMobile={true}
-              showCategory={true}
-            />
-          )}
-        </div>
-
-        {/* BOTTOM MID (under main) */}
-        <div className="lg:col-span-1 lg:row-start-2 lg:col-start-2">
-          {bottomMid && (
-            <NewsCard
-              article={bottomMid}
-              variant="compact"
-              orientation="horizontal"
-              hideMetaMobile={true}
-              showCategory={true}
-            />
-          )}
-        </div>
-
-        {/* RIGHT AD (spans into row 2; replaces 3rd slot on row 2) */}
-        <div className="lg:col-span-1 lg:row-start-2 lg:col-start-3">
-          {sidebarAd && (
+        {/* SIDE AD - column 3, row 1 */}
+        {sidebarAd && (
+          <div className="lg:col-span-1">
             <div className="bg-gray-50 rounded-lg p-2 border-2 border-gray-200 h-full">
               <AdBanner
                 ad={sidebarAd}
                 placement="sidebar"
                 size="medium-rectangle"
-                className="h-full min-h-[220px] lg:min-h-[100%]"
+                className="h-full min-h-[220px]"
               />
               {showAdHelperText && (
                 <p className="mt-2 text-xs text-gray-500 text-center">
@@ -117,15 +63,56 @@ const BigContainer: React.FC<BigContainerProps> = ({
                 </p>
               )}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* BOTTOM ROW - 3 cards spanning all 3 columns */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-4 lg:mt-6">
+            {bottomLeft && (
+              <div>
+                <NewsCard
+                  article={bottomLeft}
+                  variant="compact"
+                  orientation="horizontal"
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              </div>
+            )}
+            
+            {bottomMid && (
+              <div>
+                <NewsCard
+                  article={bottomMid}
+                  variant="compact"
+                  orientation="horizontal"
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              </div>
+            )}
+            
+            {bottomRight && (
+              <div>
+                <NewsCard
+                  article={bottomRight}
+                  variant="compact"
+                  orientation="horizontal"
+                  hideMetaMobile={true}
+                  showCategory={true}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Mobile extra cards to reach 6 total */}
       <div className="mt-4 space-y-4 lg:hidden">
-        {mobile4 && (
+        {rightTop && (
           <NewsCard
-            article={mobile4}
+            article={rightTop}
             variant="compact"
             orientation="horizontal"
             hideMetaMobile={true}
@@ -143,7 +130,7 @@ const BigContainer: React.FC<BigContainerProps> = ({
         )}
       </div>
 
-      {/* Explore More (blue, replaces any previous pagination area) */}
+      {/* Explore More */}
       <div className="flex justify-center mt-8">
         <a
           href={exploreHref}

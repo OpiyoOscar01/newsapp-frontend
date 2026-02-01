@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { type Article } from '../types';
 import { formatDate } from '../utils/formatDate';
@@ -17,6 +17,46 @@ interface NewsCardProps {
   priority?: 'high' | 'normal'; // Loading priority
 }
 
+// Custom hook for lazy loading images
+const useLazyImage = (priority: 'high' | 'normal' = 'normal') => {
+  const [isLoaded, setIsLoaded] = useState(priority === 'high');
+  const [isInView, setIsInView] = useState(priority === 'high');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (priority === 'high') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { 
+        rootMargin: '200px',
+        threshold: 0.1
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [priority]);
+
+  return {
+    containerRef,
+    isLoaded,
+    isInView,
+    handleLoad: () => setIsLoaded(true),
+    shouldLoad: isInView || priority === 'high'
+  };
+};
+
 const NewsCard: React.FC<NewsCardProps> = ({
   article,
   variant = 'standard',
@@ -29,6 +69,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   showCategory = true,
   priority = 'normal'
 }) => {
+  const { containerRef, isLoaded, handleLoad, shouldLoad } = useLazyImage(priority);
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
@@ -56,28 +97,59 @@ const NewsCard: React.FC<NewsCardProps> = ({
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
+  // Render image with lazy loading
+  const renderImage = (imageClass: string, containerClass?: string) => {
+    if (!showImage) return null;
+
+    return (
+      <div 
+        ref={containerRef} 
+        className={`relative overflow-hidden ${containerClass || ''}`}
+      >
+        {/* Image skeleton/placeholder */}
+        {!isLoaded && (
+          <div className={`absolute inset-0 bg-gray-200 animate-pulse ${imageClass}`} />
+        )}
+        
+        {/* Actual image */}
+        {shouldLoad && (
+          <img
+            src={article.imageUrl}
+            alt={article.title}
+            className={`
+              ${imageClass}
+              object-cover transform group-hover:scale-105 transition-transform duration-500
+              ${isLoaded ? 'opacity-100' : 'opacity-0'}
+            `}
+            loading={priority === 'high' ? 'eager' : 'lazy'}
+            onLoad={handleLoad}
+            decoding="async"
+          />
+        )}
+        
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        
+        {/* Category badge */}
+        {showCategory && isLoaded && variant !== 'compact' && (
+          <div className="absolute top-6 left-6">
+            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold capitalize shadow-lg backdrop-blur-sm ${getCategoryColor(article.category)}`}>
+              {article.category}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Hero Variant - Featured Story (Large and Prominent)
   if (variant === 'hero') {
     return (
       <article className={`group bg-white rounded-2xl sm:rounded-t-none shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden ${isFeaturedHero ? 'featured-hero-card' : ''} ${className}`}>
         <Link to={`/article/${article.id}`} className="block">
-          {showImage && (
-            <div className={`relative overflow-hidden ${isFeaturedHero ? 'rounded-none sm:rounded-t-2xl' : ''}`}>
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-64 sm:h-80 md:h-96 object-cover transform group-hover:scale-105 transition-transform duration-500"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-              {showCategory && (
-                <div className="absolute top-6 left-6">
-                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold capitalize shadow-lg backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </span>
-                </div>
-              )}
-            </div>
+          {renderImage(
+            "w-full h-64 sm:h-80 md:h-96",
+            isFeaturedHero ? 'rounded-none sm:rounded-t-2xl' : ''
           )}
           <div className={`p-6 md:p-8 ${isFeaturedHero ? 'px-4 sm:px-6 md:px-8' : ''}`}>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 group-hover:text-primary-600 transition-colors leading-tight">
@@ -109,23 +181,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
     return (
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="flex flex-col h-full group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
-          {showImage && (
-            <div className="relative overflow-hidden flex-shrink-0">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-56 sm:h-64 md:h-80 object-cover transform group-hover:scale-105 transition-transform duration-500"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
-                <div className="absolute top-4 left-4 hidden md:block">
-                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {renderImage("w-full h-56 sm:h-64 md:h-80")}
           <div className="p-5 md:p-6 flex flex-col flex-grow news-card-content">
             {/* Mobile category badge - above title for cards 2-4 */}
             {showCategory && shouldHideMetaMobile && (
@@ -159,136 +215,145 @@ const NewsCard: React.FC<NewsCardProps> = ({
   }
 
   // Compact Variant - PERFECTLY BALANCED horizontal layout for mobile cards 2-4
-if (variant === 'compact') {
-  return (
-    <article className={cardClasses}>
-      <Link
-        to={`/article/${article.id}`}
-        className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block h-full"
-      >
-        <div
-          className={`
-            flex items-stretch gap-3 p-3 md:block md:p-0
-            bg-white rounded-lg shadow-sm 
-            hover:shadow-lg hover:-translate-y-1 
-            transition-all duration-300 ease-out
-            ${orientation === 'horizontal' && hideMetaMobile ? '' : 'gap-4 p-4'}
-          `}
+  if (variant === 'compact') {
+    return (
+      <article className={cardClasses}>
+        <Link
+          to={`/article/${article.id}`}
+          className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block h-full"
         >
-          {/* 🔲 Outer wrapper ensures both image and content stretch evenly */}
-          <div className="flex items-stretch md:block gap-3">
+          <div
+            className={`
+              flex items-stretch gap-3 p-3 md:block md:p-0
+              bg-white rounded-lg shadow-sm 
+              hover:shadow-lg hover:-translate-y-1 
+              transition-all duration-300 ease-out
+              ${orientation === 'horizontal' && hideMetaMobile ? '' : 'gap-4 p-4'}
+            `}
+          >
+            {/* 🔲 Outer wrapper ensures both image and content stretch evenly */}
+            <div className="flex items-stretch md:block gap-3">
 
-            {/* 🖼️ Image Container */}
-            {showImage && (
-              <div
-                className={`
-                  relative overflow-hidden flex-shrink-0 
-                  w-[110px] h-[90px] /* ✅ Slightly wider than tall */
-                  rounded-lg flex
-                  md:block md:w-full md:h-auto md:rounded-t-lg md:rounded-b-none
-                `}
-              >
-                <img
-                  src={article.imageUrl}
-                  alt={article.title}
-                  className="
-                    w-full h-full object-cover flex-1 self-stretch
-                    transform group-hover:scale-105 transition-transform duration-500 ease-out
-                    md:h-auto md:aspect-video
-                  "
-                  loading={priority === 'high' ? 'eager' : 'lazy'}
-                />
-
-                {/* 🌫️ Overlay gradient for hover effect */}
+              {/* 🖼️ Image Container */}
+              {showImage && (
                 <div
-                  className="
-                    absolute inset-0 bg-gradient-to-t from-black/30 to-transparent 
-                    opacity-0 group-hover:opacity-60 transition-opacity duration-300
-                  "
-                />
-
-                {/* 🏷️ Desktop category badge */}
-                {showCategory && (
-                  <div className="absolute top-2 left-2 hidden md:block">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${getCategoryColor(
-                        article.category
-                      )}`}
-                    >
-                      {article.category}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 📰 Content Container */}
-            <div
-              className="
-                flex-1 flex flex-col justify-between 
-                h-[90px] /* ✅ Same height as image */
-                overflow-hidden /* Prevent content overflow */
-                md:h-auto md:p-4
-              "
-            >
-              {/* 📱 Mobile category badge */}
-              {showCategory && shouldHideMetaMobile && (
-                <span
+                  ref={containerRef}
                   className={`
-                    inline-flex items-center px-2.5 py-0.5 rounded 
-                    text-[10px] font-bold uppercase tracking-wider 
-                    mb-1.5 md:hidden self-start
-                    ${getCategoryColor(article.category)}
+                    relative overflow-hidden flex-shrink-0 
+                    w-[110px] h-[90px]
+                    rounded-lg flex
+                    md:block md:w-full md:h-auto md:rounded-t-lg md:rounded-b-none
                   `}
                 >
-                  {article.category}
-                </span>
+                  {/* Image skeleton/placeholder */}
+                  {!isLoaded && (
+                    <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+                  )}
+                  
+                  {/* Actual image */}
+                  {shouldLoad && (
+                    <img
+                      src={article.imageUrl}
+                      alt={article.title}
+                      className={`
+                        w-full h-full object-cover flex-1 self-stretch
+                        transform group-hover:scale-105 transition-transform duration-500 ease-out
+                        md:h-auto md:aspect-video
+                        ${isLoaded ? 'opacity-100' : 'opacity-0'}
+                      `}
+                      loading={priority === 'high' ? 'eager' : 'lazy'}
+                      onLoad={handleLoad}
+                      decoding="async"
+                    />
+                  )}
+
+                  {/* 🌫️ Overlay gradient for hover effect */}
+                  <div
+                    className="
+                      absolute inset-0 bg-gradient-to-t from-black/30 to-transparent 
+                      opacity-0 group-hover:opacity-60 transition-opacity duration-300
+                    "
+                  />
+
+                  {/* 🏷️ Desktop category badge */}
+                  {showCategory && isLoaded && (
+                    <div className="absolute top-2 left-2 hidden md:block">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${getCategoryColor(
+                          article.category
+                        )}`}
+                      >
+                        {article.category}
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {/* 🏷️ Title */}
-              <h3
+              {/* 📰 Content Container */}
+              <div
                 className="
-                  text-xs sm:text-sm font-semibold text-gray-900 
-                  group-hover:text-primary-600 group-hover:underline 
-                  transition-all duration-300
-                  leading-snug mb-0.5
+                  flex-1 flex flex-col justify-between 
+                  h-[90px] /* ✅ Same height as image */
+                  overflow-hidden /* Prevent content overflow */
+                  md:h-auto md:p-4
                 "
               >
-                {/* ✂️ Show only first 40 characters, add "..." if longer */}
-                {article.title.length > 40
-                  ? article.title.slice(0, 40) + '...'
-                  : article.title}
-              </h3>
+                {/* 📱 Mobile category badge */}
+                {showCategory && shouldHideMetaMobile && (
+                  <span
+                    className={`
+                      inline-flex items-center px-2.5 py-0.5 rounded 
+                      text-[10px] font-bold uppercase tracking-wider 
+                      mb-1.5 md:hidden self-start
+                      ${getCategoryColor(article.category)}
+                    `}
+                  >
+                    {article.category}
+                  </span>
+                )}
 
-              {/* ✍️ Author (small screens only) */}
-              <p className="text-[11px] text-gray-500 mb-1 md:hidden">
-                By {article.author}
-              </p>
+                {/* 🏷️ Title */}
+                <h3
+                  className="
+                    text-xs sm:text-sm font-semibold text-gray-900 
+                    group-hover:text-primary-600 group-hover:underline 
+                    transition-all duration-300
+                    leading-snug mb-0.5
+                  "
+                >
+                  {/* ✂️ Show only first 40 characters, add "..." if longer */}
+                  {article.title.length > 40
+                    ? article.title.slice(0, 40) + '...'
+                    : article.title}
+                </h3>
 
-              {/* ⏱️ Metadata (visible on larger screens) */}
-              <div
-                className={`
-                  flex flex-wrap items-center gap-1 text-[10px] text-gray-500 
-                  mt-auto
-                  ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}
-                `}
-              >
-                <span className="font-medium">{article.author}</span>
-                <span>•</span>
-                <span>{formatDate(article.publishedAt)}</span>
-                <span>•</span>
-                <span>{article.readTime} min</span>
+                {/* ✍️ Author (small screens only) */}
+                <p className="text-[11px] text-gray-500 mb-1 md:hidden">
+                  By {article.author}
+                </p>
+
+                {/* ⏱️ Metadata (visible on larger screens) */}
+                <div
+                  className={`
+                    flex flex-wrap items-center gap-1 text-[10px] text-gray-500 
+                    mt-auto
+                    ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}
+                  `}
+                >
+                  <span className="font-medium">{article.author}</span>
+                  <span>•</span>
+                  <span>{formatDate(article.publishedAt)}</span>
+                  <span>•</span>
+                  <span>{article.readTime} min</span>
+                </div>
               </div>
-
-              {/* 📎 Read more (optional future addition) */}
             </div>
           </div>
-        </div>
-      </Link>
-    </article>
-  );
-}
-
+        </Link>
+      </article>
+    );
+  }
 
   // Wide Variant - Horizontal Featured Card
   if (variant === 'wide') {
@@ -296,14 +361,31 @@ if (variant === 'compact') {
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col md:flex-row">
           {showImage && (
-            <div className="relative overflow-hidden md:w-1/2 flex-shrink-0">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-64 md:h-full md:min-h-[24rem] object-cover transform group-hover:scale-105 transition-transform duration-500"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
+            <div ref={containerRef} className="relative overflow-hidden md:w-1/2 flex-shrink-0">
+              {/* Image skeleton/placeholder */}
+              {!isLoaded && (
+                <div className="absolute inset-0 bg-gray-200 animate-pulse w-full h-64 md:h-full md:min-h-[24rem]" />
+              )}
+              
+              {/* Actual image */}
+              {shouldLoad && (
+                <img
+                  src={article.imageUrl}
+                  alt={article.title}
+                  className={`
+                    w-full h-64 md:h-full md:min-h-[24rem] object-cover transform group-hover:scale-105 transition-transform duration-500
+                    ${isLoaded ? 'opacity-100' : 'opacity-0'}
+                  `}
+                  loading={priority === 'high' ? 'eager' : 'lazy'}
+                  onLoad={handleLoad}
+                  decoding="async"
+                />
+              )}
+              
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              
+              {showCategory && isLoaded && (
                 <div className="absolute top-4 left-4">
                   <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
                     {article.category}
@@ -343,14 +425,28 @@ if (variant === 'compact') {
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block p-3">
           {showImage && (
-            <div className="relative overflow-hidden rounded mb-3">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-32 object-cover transform group-hover:scale-105 transition-transform duration-300"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
+            <div ref={containerRef} className="relative overflow-hidden rounded mb-3">
+              {/* Image skeleton/placeholder */}
+              {!isLoaded && (
+                <div className="absolute inset-0 bg-gray-200 animate-pulse w-full h-32" />
+              )}
+              
+              {/* Actual image */}
+              {shouldLoad && (
+                <img
+                  src={article.imageUrl}
+                  alt={article.title}
+                  className={`
+                    w-full h-32 object-cover transform group-hover:scale-105 transition-transform duration-300
+                    ${isLoaded ? 'opacity-100' : 'opacity-0'}
+                  `}
+                  loading={priority === 'high' ? 'eager' : 'lazy'}
+                  onLoad={handleLoad}
+                  decoding="async"
+                />
+              )}
+              
+              {showCategory && isLoaded && (
                 <div className="absolute top-2 left-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${getCategoryColor(article.category)}`}>
                     {article.category}
@@ -400,23 +496,7 @@ if (variant === 'compact') {
     return (
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden block">
-          {showImage && (
-            <div className="relative overflow-hidden">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-64 md:h-80 object-cover transform group-hover:scale-105 transition-transform duration-500"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
-                <div className="absolute top-4 left-4">
-                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {renderImage("w-full h-64 md:h-80")}
           <div className="p-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors leading-tight line-clamp-3">
               {article.title}
@@ -442,23 +522,7 @@ if (variant === 'compact') {
     return (
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="group bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-200">
-          {showImage && (
-            <div className="relative overflow-hidden">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-56 md:h-72 object-cover transform group-hover:scale-105 transition-transform duration-500"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
-                <div className="absolute top-4 left-4">
-                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {renderImage("w-full h-56 md:h-72")}
           <div className="p-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors leading-tight">
               {article.title}
@@ -484,23 +548,7 @@ if (variant === 'compact') {
     return (
       <article className={cardClasses}>
         <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden block">
-          {showImage && (
-            <div className="relative overflow-hidden">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-48 md:h-64 object-cover transform group-hover:scale-105 transition-transform duration-300"
-                loading={priority === 'high' ? 'eager' : 'lazy'}
-              />
-              {showCategory && (
-                <div className="absolute top-3 left-3">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                    {article.category}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {renderImage("w-full h-48 md:h-64")}
           <div className="p-5">
             <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-tight line-clamp-3">
               {article.title}
@@ -525,23 +573,7 @@ if (variant === 'compact') {
   return (
     <article className={cardClasses}>
       <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block">
-        {showImage && (
-          <div className="relative overflow-hidden">
-            <img
-              src={article.imageUrl}
-              alt={article.title}
-              className="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-300"
-              loading={priority === 'high' ? 'eager' : 'lazy'}
-            />
-            {showCategory && (
-              <div className="absolute top-3 left-3">
-                <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold capitalize backdrop-blur-sm ${getCategoryColor(article.category)}`}>
-                  {article.category}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
+        {renderImage("w-full h-48")}
         <div className="p-4">
           <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-snug line-clamp-3">
             {article.title}

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from "react";
+// components/AdBanner.tsx
+import React, { useEffect, useMemo, useState } from "react";
 import { type Ad } from "../../types";
 import { trackAdImpression, trackAdClick } from "../../utils/randomAdSelector";
 
@@ -17,6 +18,8 @@ export interface AdBannerProps {
 }
 
 const AdBanner: React.FC<AdBannerProps> = ({ ad, placement, className = "", size }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
   useEffect(() => {
     trackAdImpression(ad.id, placement);
   }, [ad.id, placement]);
@@ -46,6 +49,10 @@ const AdBanner: React.FC<AdBannerProps> = ({ ad, placement, className = "", size
     }
   }, [ad.type, size]);
 
+  const handleImageLoad = () => {
+    setIsLoaded(true);
+  };
+
   return (
     <div className={`bg-gray-50 border border-gray-200 rounded-lg overflow-hidden ${className}`}>
       <div className="px-3 py-1 bg-gray-100 border-b border-gray-200">
@@ -66,16 +73,23 @@ const AdBanner: React.FC<AdBannerProps> = ({ ad, placement, className = "", size
         aria-label={`Advertisement: ${ad.title}`}
       >
         <div className="flex h-full">
+          {/* Image container with skeleton */}
           <div className="flex-shrink-0 w-28 sm:w-32 md:w-40 h-full">
-            <img
-              src={ad.imageUrl}
-              alt={ad.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
+            <div className={`relative w-full h-full ${!isLoaded ? 'bg-gray-200 animate-pulse' : ''}`}>
+              <img
+                src={ad.imageUrl}
+                alt={ad.title}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                loading="lazy"
+                decoding="async"
+                onLoad={handleImageLoad}
+              />
+            </div>
           </div>
 
+          {/* Text content */}
           <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center">
             <h3 className="font-semibold text-gray-900 text-sm md:text-base line-clamp-2 mb-1">
               {ad.title}

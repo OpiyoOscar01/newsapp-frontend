@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { type Article } from "../../types";
+import { type Article, type Ad } from "../../types";
 import NewsCard from "../NewsCard";
+import AdBanner from "../AdBanner";
+import { selectRandomAd } from "../../utils/randomAdSelector";
 
-/**
- * Progressive disclosure:
- * - We render the headline/top story immediately.
- * - We delay the grid mount until the section is near viewport.
- * This reduces initial cost, especially images + ad slots elsewhere.
- */
+type NormalContainerProps = {
+  articles: Article[];
+  exploreHref: string;
+  shouldInsertAd?: boolean;
+  index?: number;
+};
+
 const useNearViewport = (rootMargin = "600px") => {
   const ref = useRef<HTMLDivElement | null>(null);
   const [isNear, setIsNear] = useState(false);
@@ -34,12 +37,12 @@ const useNearViewport = (rootMargin = "600px") => {
   return { ref, isNear };
 };
 
-type NormalContainerProps = {
-  articles: Article[];
-  exploreHref: string;
-};
-
-const NormalContainer: React.FC<NormalContainerProps> = ({ articles, exploreHref }) => {
+const NormalContainer: React.FC<NormalContainerProps> = ({ 
+  articles, 
+  exploreHref, 
+  shouldInsertAd = false,
+  index = 0 
+}) => {
   if (!articles || articles.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -48,7 +51,16 @@ const NormalContainer: React.FC<NormalContainerProps> = ({ articles, exploreHref
     );
   }
 
-  // Desktop uses 5 (1 wide + 4 grid). Mobile must show 6.
+  const { ref, isNear } = useNearViewport("700px");
+  const [horizontalAd, setHorizontalAd] = useState<Ad | null>(null);
+
+  useEffect(() => {
+    if (isNear && shouldInsertAd) {
+      const ad = selectRandomAd("landing", "banner");
+      setHorizontalAd(ad);
+    }
+  }, [isNear, shouldInsertAd]);
+
   const top = articles[0];
   const a1 = articles[1];
   const a2 = articles[2];
@@ -56,19 +68,19 @@ const NormalContainer: React.FC<NormalContainerProps> = ({ articles, exploreHref
   const a4 = articles[4];
   const a5 = articles[5];
 
-  const { ref, isNear } = useNearViewport("700px");
-
   return (
     <div className="w-full" ref={ref}>
       <div className="space-y-4 lg:space-y-6">
-        {/* TOP WIDE - render immediately */}
+        {/* TOP CARD - First article in category: Image on top, text below on all screens */}
         <div>
           <NewsCard
             article={top}
-            variant="wide"
+            variant="large" // Changed from 'wide' to 'large' to ensure text below image
             priority="normal"
             isFirstInCategory={true}
             showCategory={true}
+            hideMetaMobile={false} // Always show metadata for first card
+            orientation="vertical" // Force vertical orientation for text below image
           />
         </div>
 
@@ -126,11 +138,25 @@ const NormalContainer: React.FC<NormalContainerProps> = ({ articles, exploreHref
                 />
               </div>
             )}
+
+            {/* Horizontal ad after every two NormalContainers */}
+            {horizontalAd && (
+              <div className="w-full my-8">
+                <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border-2 border-gray-200">
+                  <AdBanner 
+                    ad={horizontalAd} 
+                    placement="landing" 
+                    size="leaderboard" 
+                    className="min-h-[90px] md:min-h-[120px]" 
+                  />
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {/* Explore More in blue */}
+      {/* Explore More */}
       <div className="flex justify-center mt-8">
         <a
           href={exploreHref}
