@@ -121,14 +121,6 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  // const handleCategoryChange = (index: number) => {
-  //   setCurrentCategoryIndex(index);
-  //   const categoryElement = document.querySelector(`[data-category="${categories[index].slug}"]`);
-  //   if (categoryElement) {
-  //     categoryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  //   }
-  // };
-
   const getPaginatedArticles = (categorySlug: string): Article[] => {
     const articles = categoryArticles.get(categorySlug) || [];
     const currentPage = currentPages.get(categorySlug) || 1;
