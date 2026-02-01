@@ -4,27 +4,28 @@ import { type Article } from '../types';
 import { formatDate } from '../utils/formatDate';
 
 interface NewsCardProps {
-  article: Article;
+  article?: Article; // Made optional for skeleton state
   variant?: 'hero' | 'large' | 'medium' | 'standard' | 'compact' | 'mini' | 'small' | 'wide' | 'featured' | 'spotlight' | 'sidebar';
   orientation?: 'horizontal' | 'vertical';
   showImage?: boolean;
   className?: string;
   // Responsive props
-  isFirstInCategory?: boolean;  // First card - always show metadata
-  hideMetaMobile?: boolean;     // Hide metadata on mobile for cards 2-4
-  isFeaturedHero?: boolean;     // Edge-to-edge on mobile
-  showCategory?: boolean;       // Show category badge (default behavior maintained)
-  priority?: 'high' | 'normal'; // Loading priority
+  isFirstInCategory?: boolean;
+  hideMetaMobile?: boolean;
+  isFeaturedHero?: boolean;
+  showCategory?: boolean;
+  priority?: 'high' | 'normal';
+  isLoading?: boolean; // New prop to control skeleton state
 }
 
-// Custom hook for lazy loading images
-const useLazyImage = (priority: 'high' | 'normal' = 'normal') => {
-  const [isLoaded, setIsLoaded] = useState(priority === 'high');
-  const [isInView, setIsInView] = useState(priority === 'high');
+// Enhanced custom hook for lazy loading images with skeleton
+const useLazyImage = (priority: 'high' | 'normal' = 'normal', isLoading?: boolean) => {
+  const [isLoaded, setIsLoaded] = useState(priority === 'high' && !isLoading);
+  const [isInView, setIsInView] = useState(priority === 'high' && !isLoading);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (priority === 'high') return;
+    if (priority === 'high' || isLoading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -46,16 +47,91 @@ const useLazyImage = (priority: 'high' | 'normal' = 'normal') => {
     }
 
     return () => observer.disconnect();
-  }, [priority]);
+  }, [priority, isLoading]);
+
+  const handleLoad = () => {
+    if (!isLoading) {
+      setIsLoaded(true);
+    }
+  };
 
   return {
     containerRef,
-    isLoaded,
-    isInView,
-    handleLoad: () => setIsLoaded(true),
-    shouldLoad: isInView || priority === 'high'
+    isLoaded: isLoading ? false : isLoaded,
+    isInView: isLoading ? false : isInView,
+    handleLoad,
+    shouldLoad: isLoading ? false : (isInView || priority === 'high')
   };
 };
+
+// Skeleton component for text content
+const TextSkeleton: React.FC<{
+  lines?: number;
+  variant?: 'title' | 'body' | 'meta';
+  className?: string;
+}> = ({ lines = 1, variant = 'body', className = '' }) => {
+  const getHeight = () => {
+    switch (variant) {
+      case 'title': return 'h-4 md:h-6';
+      case 'body': return 'h-3 md:h-4';
+      case 'meta': return 'h-2.5 md:h-3';
+      default: return 'h-3';
+    }
+  };
+
+  const getWidth = () => {
+    switch (variant) {
+      case 'title': return 'w-3/4 md:w-4/5';
+      case 'body': return 'w-full';
+      case 'meta': return 'w-16 md:w-20';
+      default: return 'w-full';
+    }
+  };
+
+  return (
+    <div className={`space-y-2 ${className}`}>
+      {Array.from({ length: lines }).map((_, index) => (
+        <div
+          key={index}
+          className={`bg-gray-200 animate-pulse rounded ${getHeight()} ${getWidth()} ${index === lines - 1 && variant === 'body' ? 'w-5/6' : ''}`}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Category skeleton
+const CategorySkeleton: React.FC<{ className?: string }> = ({ className = '' }) => (
+  <div className={`bg-gray-200 animate-pulse rounded-full h-6 w-16 ${className}`} />
+);
+
+// Author/Date skeleton
+const MetaSkeleton: React.FC<{ items?: number }> = ({ items = 3 }) => (
+  <div className="flex flex-wrap items-center gap-2">
+    {Array.from({ length: items }).map((_, index) => (
+      <React.Fragment key={index}>
+        <div className="bg-gray-200 animate-pulse rounded h-2.5 w-12 md:w-16" />
+        {index < items - 1 && <span className="text-gray-300">•</span>}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
+// Image skeleton component
+const ImageSkeleton: React.FC<{
+  className?: string;
+  containerClass?: string;
+  showCategory?: boolean;
+}> = ({ className = '', containerClass = '', showCategory = true }) => (
+  <div className={`relative overflow-hidden ${containerClass}`}>
+    <div className={`bg-gray-200 animate-pulse ${className}`} />
+    {showCategory && (
+      <div className="absolute top-4 left-4">
+        <CategorySkeleton />
+      </div>
+    )}
+  </div>
+);
 
 const NewsCard: React.FC<NewsCardProps> = ({
   article,
@@ -67,9 +143,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
   hideMetaMobile = false,
   isFeaturedHero = false,
   showCategory = true,
-  priority = 'normal'
+  priority = 'normal',
+  isLoading = false // Default to false
 }) => {
-  const { containerRef, isLoaded, handleLoad, shouldLoad } = useLazyImage(priority);
+  const { containerRef, isLoaded, handleLoad, shouldLoad } = useLazyImage(priority, isLoading);
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
@@ -97,9 +174,19 @@ const NewsCard: React.FC<NewsCardProps> = ({
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
-  // Render image with lazy loading
+  // Render image with lazy loading and skeleton
   const renderImage = (imageClass: string, containerClass?: string) => {
     if (!showImage) return null;
+
+    if (isLoading) {
+      return (
+        <ImageSkeleton
+          className={imageClass}
+          containerClass={containerClass}
+          showCategory={showCategory && variant !== 'compact'}
+        />
+      );
+    }
 
     return (
       <div 
@@ -114,8 +201,8 @@ const NewsCard: React.FC<NewsCardProps> = ({
         {/* Actual image */}
         {shouldLoad && (
           <img
-            src={article.imageUrl}
-            alt={article.title}
+            src={article?.imageUrl}
+            alt={article?.title}
             className={`
               ${imageClass}
               object-cover transform group-hover:scale-105 transition-transform duration-500
@@ -131,7 +218,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
         
         {/* Category badge */}
-        {showCategory && isLoaded && variant !== 'compact' && (
+        {showCategory && isLoaded && variant !== 'compact' && article && (
           <div className="absolute top-6 left-6">
             <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold capitalize shadow-lg backdrop-blur-sm ${getCategoryColor(article.category)}`}>
               {article.category}
@@ -141,6 +228,191 @@ const NewsCard: React.FC<NewsCardProps> = ({
       </div>
     );
   };
+
+  // Common skeleton renderer for card content
+  const renderSkeletonContent = (config: {
+    titleLines?: number;
+    bodyLines?: number;
+    showBody?: boolean;
+    showMeta?: boolean;
+  }) => {
+    const { titleLines = 2, bodyLines = 2, showBody = true, showMeta = true } = config;
+
+    return (
+      <>
+        {showCategory && shouldHideMetaMobile && (
+          <CategorySkeleton className="mb-2 md:hidden" />
+        )}
+        
+        <TextSkeleton
+          lines={titleLines}
+          variant="title"
+          className="mb-3"
+        />
+        
+        {showBody && (
+          <TextSkeleton
+            lines={bodyLines}
+            variant="body"
+            className={`mb-4 ${shouldHideMetaMobile ? 'hidden md:block' : ''}`}
+          />
+        )}
+        
+        {showMeta && (
+          <div className={`pt-3 border-t border-gray-100 mt-auto ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
+            <MetaSkeleton />
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // If loading, render skeleton based on variant
+  if (isLoading) {
+    switch (variant) {
+      case 'hero':
+        return (
+          <article className={`group bg-white rounded-2xl sm:rounded-t-none shadow-lg overflow-hidden ${isFeaturedHero ? 'featured-hero-card' : ''} ${className}`}>
+            <div className="block">
+              <ImageSkeleton
+                className="w-full h-64 sm:h-80 md:h-96"
+                containerClass={isFeaturedHero ? 'rounded-none sm:rounded-t-2xl' : ''}
+                showCategory={showCategory}
+              />
+              <div className={`p-6 md:p-8 ${isFeaturedHero ? 'px-4 sm:px-6 md:px-8' : ''}`}>
+                <TextSkeleton lines={2} variant="title" className="mb-4" />
+                <TextSkeleton lines={3} variant="body" className="mb-6" />
+                <MetaSkeleton items={4} />
+              </div>
+            </div>
+          </article>
+        );
+
+      case 'large':
+        return (
+          <article className={cardClasses}>
+            <div className="flex flex-col h-full bg-white rounded-xl shadow-md overflow-hidden">
+              <ImageSkeleton className="w-full h-56 sm:h-64 md:h-80" />
+              <div className="p-5 md:p-6 flex flex-col flex-grow">
+                {renderSkeletonContent({
+                  titleLines: 3,
+                  bodyLines: 3,
+                  showBody: true
+                })}
+              </div>
+            </div>
+          </article>
+        );
+
+      case 'compact':
+        return (
+          <article className={cardClasses}>
+            <div className="group bg-white rounded-lg shadow-sm overflow-hidden block h-full">
+              <div className="flex items-stretch gap-3 p-3 md:block md:p-0">
+                <div className="flex items-stretch md:block gap-3">
+                  {showImage && (
+                    <ImageSkeleton
+                      className="w-[110px] h-[90px] md:w-full md:h-auto"
+                      containerClass="rounded-lg md:rounded-t-lg md:rounded-b-none"
+                      showCategory={false}
+                    />
+                  )}
+                  <div className="flex-1 flex flex-col justify-between h-[90px] md:h-auto md:p-4 overflow-hidden">
+                    <TextSkeleton lines={2} variant="title" className="mb-1" />
+                    <div className="flex items-center gap-1.5 text-[10px] mt-auto">
+                      <MetaSkeleton items={3} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        );
+
+      case 'wide':
+        return (
+          <article className={cardClasses}>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
+              {showImage && (
+                <ImageSkeleton
+                  className="w-full h-64 md:h-full md:min-h-[24rem]"
+                  containerClass="md:w-1/2 flex-shrink-0"
+                />
+              )}
+              <div className="p-6 md:p-8 md:w-1/2 flex flex-col justify-center">
+                <TextSkeleton lines={2} variant="title" className="mb-4" />
+                <TextSkeleton lines={4} variant="body" className="mb-6" />
+                <MetaSkeleton items={4} />
+              </div>
+            </div>
+          </article>
+        );
+
+      case 'mini':
+        return (
+          <article className={cardClasses}>
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden block p-3">
+              {showImage && (
+                <ImageSkeleton
+                  className="w-full h-32"
+                  containerClass="rounded mb-3"
+                />
+              )}
+              <TextSkeleton lines={2} variant="title" className="mb-2" />
+              <MetaSkeleton items={2} />
+            </div>
+          </article>
+        );
+
+      case 'sidebar':
+        return (
+          <article className={cardClasses}>
+            <div className="bg-white rounded-lg shadow-sm p-4 block">
+              {showCategory && <CategorySkeleton className="mb-2" />}
+              <TextSkeleton lines={3} variant="title" className="mb-2" />
+              <MetaSkeleton items={2} />
+            </div>
+          </article>
+        );
+
+      case 'featured':
+      case 'spotlight':
+      case 'medium':
+        return (
+          <article className={cardClasses}>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden block">
+              <ImageSkeleton className="w-full h-64 md:h-80" />
+              <div className="p-6">
+                {renderSkeletonContent({
+                  titleLines: 2,
+                  bodyLines: 2,
+                  showBody: true
+                })}
+              </div>
+            </div>
+          </article>
+        );
+
+      default: // standard
+        return (
+          <article className={cardClasses}>
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden block">
+              <ImageSkeleton className="w-full h-48" />
+              <div className="p-4">
+                <TextSkeleton lines={3} variant="title" className="mb-2" />
+                <MetaSkeleton items={3} />
+              </div>
+            </div>
+          </article>
+        );
+    }
+  }
+
+  // Return null if no article provided
+  if (!article) {
+    console.warn('NewsCard component rendered without article data');
+    return null;
+  }
 
   // Hero Variant - Featured Story (Large and Prominent)
   if (variant === 'hero') {
