@@ -161,34 +161,50 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+        <div className="hidden md:block">
+        <div className="ml-10 flex items-baseline space-x-4">
+          <Link
+            to="/"
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              isActiveRoute('/') 
+                ? 'text-primary-600 bg-primary-50' 
+                : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
+            }`}
+          >
+            Home
+          </Link>
+          
+          {/* Sort categories: general first, then the rest */}
+          {(() => {
+            // Find the "general" category
+            const generalCategory = categories.find(cat => cat.slug === 'general');
+            // Get all other categories (excluding "general")
+            const otherCategories = categories.filter(cat => cat.slug !== 'general');
+            
+            // Create new array with "general" first (if it exists)
+            const sortedCategories = [];
+            if (generalCategory) {
+              sortedCategories.push(generalCategory);
+            }
+            sortedCategories.push(...otherCategories);
+            
+            // Render the sorted categories
+            return sortedCategories.map((category) => (
               <Link
-                to="/"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActiveRoute('/') 
-                    ? 'text-primary-600 bg-primary-50' 
+                key={category.id}
+                to={`/category/${category.slug}`}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+                  isActiveRoute(`/category/${category.slug}`)
+                    ? 'text-primary-600 bg-primary-50'
                     : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
                 }`}
               >
-                Home
+                {category.name}
               </Link>
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/category/${category.slug}`}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                    isActiveRoute(`/category/${category.slug}`)
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {category.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-
+            ));
+          })()}
+        </div>
+      </div>
           {/* Right Section - Search & Auth */}
           <div className="hidden md:flex items-center space-x-4 flex-1 justify-end">
             {/* Search Bar - Desktop */}
