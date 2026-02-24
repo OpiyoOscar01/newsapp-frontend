@@ -1,142 +1,33 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { getArticlesByCategory, getCategories } from '../data/dataService';
-import { selectRandomAd } from '../utils/randomAdSelector';
-import { paginate } from '../utils/paginationHelpers';
-import { filterArticlesBySearch, sortArticles } from '../utils/filterArticles';
-import { type Ad, type Article } from '../types';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCategoryPage } from '../hooks/useCategoryPage';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
 import CompactNewsCard from '../components/CompactNewsCard';
 import { CategoryPageSkeleton } from '../components/LoadingSkeletons';
-import { trackVisitor } from '../utils/visitorTracking';
-
+import { type Article } from '../types'; // Make sure to import the Article type
 
 const CategoryPage: React.FC = () => {
-  const { categorySlug } = useParams<{ categorySlug: string }>();
-  useEffect(() => {
-    if (categorySlug) {
-      trackVisitor({ categorySlug });
-    }
-  }, [categorySlug]);
-
-  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  // Ad states - now with 2 ads total
-  const [topBannerAd, setTopBannerAd] = useState<Ad | null>(null);
-  const [sidebarAd, setSidebarAd] = useState<Ad | null>(null);
-  
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [sortBy, setSortBy] = useState<'date' | 'title' | 'readTime'>('date');
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
-  const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('perPage') || '4'));
-  
-  const [category, setCategory] = useState<any>(null);
-  const [allCategoryArticles, setAllCategoryArticles] = useState<Article[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load category data
-  useEffect(() => {
-    const loadCategoryData = async () => {
-      if (!categorySlug) {
-        setError('Category is required');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Load categories to find the current one
-        const categories = await getCategories();
-        const currentCategory = categories.find(cat => cat.slug === categorySlug);
-        
-        if (!currentCategory) {
-          setError('Category not found');
-          setLoading(false);
-          return;
-        }
-        
-        setCategory(currentCategory);
-
-        // Load articles for this category
-        const articles = await getArticlesByCategory(categorySlug);
-        setAllCategoryArticles(articles);
-
-        // Load ads - 2 ads: top banner + sidebar
-        const topBanner = selectRandomAd(categorySlug, 'banner');
-        const sidebar = selectRandomAd(categorySlug, 'sidebar');
-        
-        setTopBannerAd(topBanner);
-        setSidebarAd(sidebar);
-      } catch (err) {
-        console.error('Failed to load category:', err);
-        setError('Failed to load category content');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategoryData();
-  }, [categorySlug]);
-
-  // Get and filter articles
-  const filteredAndSortedArticles = useMemo(() => {
-    let articles = allCategoryArticles;
-    
-    // Apply search filter
-    if (searchQuery.trim()) {
-      articles = filterArticlesBySearch(articles, searchQuery);
-    }
-    
-    // Apply sorting
-    articles = sortArticles(articles, sortBy);
-    
-    return articles;
-  }, [allCategoryArticles, searchQuery, sortBy]);
-
-  // Paginate articles
-  const paginatedData = useMemo(() => {
-    return paginate(filteredAndSortedArticles, currentPage, itemsPerPage);
-  }, [filteredAndSortedArticles, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    // Update URL with search, page, and perPage parameters
-    const newParams = new URLSearchParams();
-    if (searchQuery) newParams.set('search', searchQuery);
-    if (currentPage > 1) newParams.set('page', currentPage.toString());
-    if (itemsPerPage !== 4) newParams.set('perPage', itemsPerPage.toString());
-    setSearchParams(newParams);
-  }, [searchQuery, currentPage, itemsPerPage, setSearchParams]);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  };
-
-  const handleSortChange = (newSortBy: 'date' | 'title' | 'readTime') => {
-    setSortBy(newSortBy);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-
-  const handleRetry = () => {
-    window.location.reload();
-  };
+  const {
+    category,
+    loading,
+    error,
+    searchQuery,
+    sortBy,
+    itemsPerPage,
+    topBannerAd,
+    sidebarAd,
+    filteredAndSortedArticles,
+    paginatedData,
+    handleSearch,
+    handleSortChange,
+    handlePageChange,
+    handleItemsPerPageChange,
+    handleRetry,
+  } = useCategoryPage();
 
   if (loading) {
     return <CategoryPageSkeleton />;
@@ -172,13 +63,13 @@ const CategoryPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-      {/* Ad 1: Top Banner Ad - Full width, responsive */}
+      {/* Ad 1: Top Banner Ad */}
       {topBannerAd && (
         <div className="mb-6 md:mb-8">
           <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
             <AdBanner 
               ad={topBannerAd} 
-              placement={`banner`}
+              placement="banner"
               className="w-full"
             />
           </div>
@@ -255,12 +146,12 @@ const CategoryPage: React.FC = () => {
                   <span>
                     Showing{" "}
                     {Math.min(
-                      (currentPage - 1) * itemsPerPage + 1,
+                      (paginatedData.currentPage - 1) * itemsPerPage + 1,
                       filteredAndSortedArticles.length
                     )}
                     -
                     {Math.min(
-                      currentPage * itemsPerPage,
+                      paginatedData.currentPage * itemsPerPage,
                       filteredAndSortedArticles.length
                     )}{" "}
                     of{" "}
@@ -294,11 +185,13 @@ const CategoryPage: React.FC = () => {
           {paginatedData.items.length > 0 ? (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {paginatedData.items.map((article) => (
+                {paginatedData.items.map((article: Article) => ( // Explicitly type the article parameter
                   <div key={article.id}>
                     {/* Mobile version */}
                     <div className="md:hidden">
-                      <CompactNewsCard article={article} />
+                      <CompactNewsCard 
+                        article={article}
+                      />
                     </div>
 
                     {/* Desktop version */}
@@ -353,12 +246,12 @@ const CategoryPage: React.FC = () => {
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <div className="sticky top-24 space-y-6 lg:space-y-8">
-            {/* Ad 2: Sidebar Ad - Responsive positioning */}
+            {/* Ad 2: Sidebar Ad */}
             {sidebarAd && (
               <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm">
                 <AdBanner 
                   ad={sidebarAd} 
-                  placement={`sidebar`}
+                  placement="sidebar"
                   className="w-full"
                 />
               </div>

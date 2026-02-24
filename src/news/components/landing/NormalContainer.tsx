@@ -41,7 +41,6 @@ const NormalContainer: React.FC<NormalContainerProps> = ({
   articles, 
   exploreHref, 
   shouldInsertAd = false,
-  index = 0 
 }) => {
   if (!articles || articles.length === 0) {
     return (
