@@ -1,7 +1,7 @@
 import { type ApiResponse } from '../../types/news';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.definepress.com/api/v1';
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || '1|LvnJbhScWtUg5v5o7tbzkOOM4eUeQGvIKSqxykLi8a9abbc8';
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || '32|xdA0g01BTxjiMudCrlYbOyUiqcPYaa0ucdZN0viR1cfc148c';
 
 export class ApiError extends Error {
   public status?: number;

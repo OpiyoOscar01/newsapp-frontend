@@ -183,7 +183,7 @@ async function syncPendingData(): Promise<void> {
 
   try {
     console.log(`Syncing ${pending.length} pending visitor events to backend...`);
-    const result = await analyticsService.batchTrackVisitors(pending);
+    const result = await analyticsService.batchTrackVisitors();
     
     if (result.success > 0) {
       console.log(`Successfully synced ${result.success}/${pending.length} events`);
@@ -310,7 +310,7 @@ export async function trackVisitor(options?: {
     
     // Try to send to backend immediately
     try {
-      await analyticsService.trackVisitor(payload);
+      await analyticsService.trackVisitor();
       console.log('Visitor tracked successfully');
     } catch (error) {
       // If backend fails, add to pending sync queue
@@ -361,7 +361,7 @@ export async function getVisitorStats(days: number = 7): Promise<VisitorStats> {
   // Try to get from backend
   try {
     console.log('Fetching stats from backend...');
-    const stats = await analyticsService.getVisitorStats(days);
+    const stats = await analyticsService.getVisitorStats();
     
     // Cache the results
     try {
@@ -520,7 +520,7 @@ export async function exportVisitorDataForBackend(days: number = 30): Promise<{
   exportedAt: string;
 }> {
   try {
-    const backendData = await analyticsService.exportVisitorData(days);
+    const backendData = await analyticsService.exportVisitorData();
     return {
       data: backendData.raw_data,
       stats: backendData.stats,

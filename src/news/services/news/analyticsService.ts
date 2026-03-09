@@ -1,4 +1,143 @@
-import { apiClient } from '../api/client';
+// import type { VisitorData, VisitorStats } from '../../utils/visitorTracking';
+
+// export interface TrackVisitorPayload {
+//   sessionId: string;
+//   uniqueVisitorId?: string;
+//   page: string;
+//   pageType: 'landing' | 'category' | 'article' | 'other';
+//   referrer?: string;
+//   referrerType: 'direct' | 'search' | 'social' | 'external' | 'internal';
+//   userAgent?: string;
+//   screenResolution?: string;
+//   deviceType: 'mobile' | 'tablet' | 'desktop';
+//   location?: {
+//     country?: string;
+//     city?: string;
+//     timezone: string;
+//   };
+//   categorySlug?: string;
+//   articleId?: string;
+//   additionalData?: Record<string, any>;
+// }
+
+// export interface RealtimeVisitors {
+//   total_today: number;
+//   unique_today: number;
+//   active_now: number;
+// }
+
+// export interface ExportedData {
+//   raw_data: VisitorData[];
+//   stats: VisitorStats;
+//   exported_at: string;
+//   time_range: string;
+//   total_records: number;
+// }
+
+// export interface BatchTrackResult {
+//   success: number;
+//   failed: number;
+//   errors: Array<{ index: number; error: string }>;
+// }
+
+// class AnalyticsService {
+//  private readonly ENDPOINTS = {
+//     TRACK: '/analytics/visitors/track',
+//     STATS: '/analytics/visitors/stats',
+//     REALTIME: '/analytics/visitors/realtime',
+//     EXPORT: '/analytics/visitors/export',
+//     BATCH: '/analytics/visitors/batch',
+//   };
+
+//   /**
+//    * TODO: Implement visitor tracking with 30-minute rate limiting
+//    * @param payload - Visitor tracking data
+//    * @returns Promise<VisitorData>
+//    */
+//   async trackVisitor(payload: TrackVisitorPayload): Promise<VisitorData> {
+//     // TODO: Add rate limiting logic
+//     // TODO: Validate payload fields
+//     // TODO: Implement retry logic
+//     // TODO: Add request queuing
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement visitor statistics retrieval with caching
+//    * @param days - Number of days to retrieve stats for
+//    * @returns Promise<VisitorStats>
+//    */
+//   async getVisitorStats(days: number = 7): Promise<VisitorStats> {
+//     // TODO: Add caching mechanism
+//     // TODO: Implement data aggregation
+//     // TODO: Add pagination for large datasets
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement real-time visitor count
+//    * @returns Promise<RealtimeVisitors>
+//    */
+//   async getRealtimeVisitors(): Promise<RealtimeVisitors> {
+//     // TODO: Implement WebSocket connection
+//     // TODO: Add real-time updates
+//     // TODO: Cache with 1-minute TTL
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement visitor data export
+//    * @param days - Number of days to export
+//    * @returns Promise<ExportedData>
+//    */
+//   async exportVisitorData(days: number = 30): Promise<ExportedData> {
+//     // TODO: Add rate limiting (max once per hour)
+//     // TODO: Implement pagination
+//     // TODO: Add format selection (CSV/JSON)
+//     // TODO: Compress large responses
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement batch visitor tracking
+//    * @param visitors - Array of visitors to track
+//    * @returns Promise<BatchTrackResult>
+//    */
+//   async batchTrackVisitors(visitors: TrackVisitorPayload[]): Promise<BatchTrackResult> {
+//     // TODO: Validate batch size (max 100)
+//     // TODO: Implement partial success handling
+//     // TODO: Add rate limiting (10 batches per minute)
+//     // TODO: Add transaction rollback on failure
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement visitor session cleanup
+//    * @param daysOlderThan - Delete sessions older than X days
+//    * @returns Promise<{ deletedCount: number }>
+//    */
+//   async cleanupOldSessions(daysOlderThan: number = 90): Promise<{ deletedCount: number }> {
+//     // TODO: Implement GDPR compliance
+//     // TODO: Add confirmation step
+//     // TODO: Log cleanup operations
+//     throw new Error('Method not implemented.');
+//   }
+
+//   /**
+//    * TODO: Implement visitor identification
+//    * @param visitorId - Unique visitor identifier
+//    * @returns Promise<VisitorData[]>
+//    */
+//   async getVisitorHistory(visitorId: string): Promise<VisitorData[]> {
+//     // TODO: Implement pagination
+//     // TODO: Add date range filtering
+//     // TODO: Anonymize sensitive data
+//     throw new Error();
+//   }
+// }
+
+// export const analyticsService = new AnalyticsService();
+
 import type { VisitorData, VisitorStats } from '../../utils/visitorTracking';
 
 export interface TrackVisitorPayload {
@@ -42,139 +181,98 @@ export interface BatchTrackResult {
 }
 
 class AnalyticsService {
-  private readonly ENDPOINTS = {
-    TRACK: '/analytics/visitors/track',
-    STATS: '/analytics/visitors/stats',
-    REALTIME: '/analytics/visitors/realtime',
-    EXPORT: '/analytics/visitors/export',
-    BATCH: '/analytics/visitors/batch',
-  };
+//  private readonly ENDPOINTS = {
+//     TRACK: '/analytics/visitors/track',
+//     STATS: '/analytics/visitors/stats',
+//     REALTIME: '/analytics/visitors/realtime',
+//     EXPORT: '/analytics/visitors/export',
+//     BATCH: '/analytics/visitors/batch',
+//   };
 
   /**
-   * Track a visitor interaction
-   * @param payload Visitor data to track
-   * @returns Promise with tracked visitor data
+   * TODO: Implement visitor tracking with 30-minute rate limiting
+   * @param payload - Visitor tracking data
+   * @returns Promise<VisitorData>
    */
-  async trackVisitor(payload: TrackVisitorPayload): Promise<VisitorData> {
-    try {
-      const response = await apiClient.postPublic<VisitorData>(
-        this.ENDPOINTS.TRACK,
-        payload
-      );
-      return response;
-    } catch (error) {
-      console.error('Failed to track visitor:', error);
-      throw error;
-    }
+  async trackVisitor(): Promise<VisitorData> {
+    // TODO: Add rate limiting logic
+    // TODO: Validate payload fields
+    // TODO: Implement retry logic
+    // TODO: Add request queuing
+    throw new Error('Method not implemented.');
   }
 
   /**
-   * Get visitor statistics
-   * @param days Number of days to retrieve stats for (default: 7)
-   * @returns Promise with visitor statistics
+   * TODO: Implement visitor statistics retrieval with caching
+   * @param days - Number of days to retrieve stats for
+   * @returns Promise<VisitorStats>
    */
-  async getVisitorStats(days: number = 7): Promise<VisitorStats> {
-    try {
-      const response = await apiClient.getPublic<VisitorStats>(
-        this.ENDPOINTS.STATS,
-        { days }
-      );
-      return response;
-    } catch (error) {
-      console.error('Failed to get visitor stats:', error);
-      throw error;
-    }
+  async getVisitorStats(): Promise<VisitorStats> {
+    // TODO: Add caching mechanism
+    // TODO: Implement data aggregation
+    // TODO: Add pagination for large datasets
+    throw new Error('Method not implemented.');
   }
 
   /**
-   * Get real-time visitor count
-   * @returns Promise with real-time visitor data
+   * TODO: Implement real-time visitor count
+   * @returns Promise<RealtimeVisitors>
    */
   async getRealtimeVisitors(): Promise<RealtimeVisitors> {
-    try {
-      const response = await apiClient.getPublic<RealtimeVisitors>(
-        this.ENDPOINTS.REALTIME
-      );
-      return response;
-    } catch (error) {
-      console.error('Failed to get realtime visitors:', error);
-      throw error;
-    }
+    // TODO: Implement WebSocket connection
+    // TODO: Add real-time updates
+    // TODO: Cache with 1-minute TTL
+    throw new Error('Method not implemented.');
   }
 
   /**
-   * Export visitor data
-   * @param days Number of days to export (default: 30)
-   * @returns Promise with exported data
+   * TODO: Implement visitor data export
+   * @param days - Number of days to export
+   * @returns Promise<ExportedData>
    */
-  async exportVisitorData(days: number = 30): Promise<ExportedData> {
-    try {
-      const response = await apiClient.getPublic<ExportedData>(
-        this.ENDPOINTS.EXPORT,
-        { days }
-      );
-      return response;
-    } catch (error) {
-      console.error('Failed to export visitor data:', error);
-      throw error;
-    }
+  async exportVisitorData(): Promise<ExportedData> {
+    // TODO: Add rate limiting (max once per hour)
+    // TODO: Implement pagination
+    // TODO: Add format selection (CSV/JSON)
+    // TODO: Compress large responses
+    throw new Error('Method not implemented.');
   }
 
   /**
-   * Batch track multiple visitor events (for syncing local storage to backend)
-   * @param visitors Array of visitor data to track
-   * @returns Promise with results of tracking operations
+   * TODO: Implement batch visitor tracking
+   * @param visitors - Array of visitors to track
+   * @returns Promise<BatchTrackResult>
    */
-  async batchTrackVisitors(visitors: TrackVisitorPayload[]): Promise<BatchTrackResult> {
-    if (visitors.length === 0) {
-      return { success: 0, failed: 0, errors: [] };
-    }
+  async batchTrackVisitors(): Promise<BatchTrackResult> {
+    // TODO: Validate batch size (max 100)
+    // TODO: Implement partial success handling
+    // TODO: Add rate limiting (10 batches per minute)
+    // TODO: Add transaction rollback on failure
+    throw new Error('Method not implemented.');
+  }
 
-    // Try to use batch endpoint if available
-    try {
-      const response = await apiClient.postPublic<BatchTrackResult>(
-        this.ENDPOINTS.BATCH,
-        { visitors }
-      );
-      return response;
-    } catch (batchError) {
-      console.warn('Batch endpoint failed, falling back to individual tracking:', batchError);
-      
-      // Fallback to individual tracking
-      const results: BatchTrackResult = {
-        success: 0,
-        failed: 0,
-        errors: [],
-      };
+  /**
+   * TODO: Implement visitor session cleanup
+   * @param daysOlderThan - Delete sessions older than X days
+   * @returns Promise<{ deletedCount: number }>
+   */
+  async cleanupOldSessions(): Promise<{ deletedCount: number }> {
+    // TODO: Implement GDPR compliance
+    // TODO: Add confirmation step
+    // TODO: Log cleanup operations
+    throw new Error('Method not implemented.');
+  }
 
-      // Track visitors in batches of 10 to avoid overwhelming the server
-      const batchSize = 10;
-      for (let i = 0; i < visitors.length; i += batchSize) {
-        const batch = visitors.slice(i, i + batchSize);
-        const promises = batch.map((visitor, batchIndex) =>
-          this.trackVisitor(visitor)
-            .then(() => {
-              results.success++;
-            })
-            .catch((error) => {
-              results.failed++;
-              results.errors.push({
-                index: i + batchIndex,
-                error: error instanceof Error ? error.message : 'Unknown error',
-              });
-            })
-        );
-
-        await Promise.allSettled(promises);
-        
-        // Add a small delay between batches to avoid rate limiting
-        if (i + batchSize < visitors.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-
-      return results;
-    }
+  /**
+   * TODO: Implement visitor identification
+   * @param visitorId - Unique visitor identifier
+   * @returns Promise<VisitorData[]>
+   */
+  async getVisitorHistory(): Promise<VisitorData[]> {
+    // TODO: Implement pagination
+    // TODO: Add date range filtering
+    // TODO: Anonymize sensitive data
+    throw new Error();
   }
 }
 

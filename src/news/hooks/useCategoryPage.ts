@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { getArticlesByCategory, getCategories } from '../data/dataService';
 import { selectRandomAd } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
@@ -43,7 +43,6 @@ interface UseCategoryPageReturn {
 export const useCategoryPage = (): UseCategoryPageReturn => {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   
   // Ad states
   const [topBannerAd, setTopBannerAd] = useState<Ad | null>(null);
