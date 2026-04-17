@@ -69,7 +69,7 @@ const AdminDashboard: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-2 bg-blue-100 rounded-lg cursor-pointer">
                 <LayoutDashboard className="h-6 w-6 text-blue-600" />
               </div>
               <div>
@@ -82,14 +82,14 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate(ROUTES.HOME)}
-                className="inline-flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <Home className="h-4 w-4 mr-1" />
                 View Site
               </button>
               <button
                 onClick={() => logout()}
-                className="inline-flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+                className="inline-flex items-center px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors cursor-pointer"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 Logout
@@ -111,7 +111,7 @@ const AdminDashboard: React.FC = () => {
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center px-3 py-2 rounded-md font-medium transition-colors ${
+                      className={`w-full flex items-center px-3 py-2 rounded-md font-medium transition-colors cursor-pointer ${
                         activeTab === item.id
                           ? 'bg-blue-100 text-blue-700'
                           : 'text-gray-600 hover:bg-gray-100'
@@ -131,14 +131,14 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'news-fetcher' && <MediaStackFetcher />}
             {activeTab === 'articles' && (
               <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4 cursor-pointer" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Article Management</h2>
                 <p className="text-gray-600">Coming soon...</p>
               </div>
             )}
             {activeTab === 'settings' && (
               <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-                <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <Settings className="h-16 w-16 text-gray-400 mx-auto mb-4 cursor-pointer" />
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Settings</h2>
                 <p className="text-gray-600">Coming soon...</p>
               </div>
