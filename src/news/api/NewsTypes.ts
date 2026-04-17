@@ -92,6 +92,7 @@ export interface ApiArticle {
   summary?: string | null;
   author?: string | null;
   published_at: string;
+  slug: string;
   image_url?: string | null;
   category: string;
   category_model?: CategoryModel;
@@ -137,6 +138,7 @@ export interface Article {
   source?: string;
   viewCount?: number;
   isFeatured?: boolean;
+  slug?:string
 }
 
 /* -------------------------------------------------------------------------- */

@@ -167,6 +167,7 @@ const formatArticle = (apiArticle: ApiArticle): AppArticle => {
     source: apiArticle.source ?? undefined,
     viewCount: apiArticle.view_count,
     isFeatured: apiArticle.is_featured,
+    slug: apiArticle.slug,
   };
 };
 
@@ -433,18 +434,6 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-
-      {/* ── Debug panel (dev only) ─────────────────────────────────────── */}
-      {DEBUG && (
-        <DebugPanel
-          categories={categories}
-          allQueries={allQueries}
-          categorySlugs={categorySlugs}
-          categoryArticles={categoryArticles}
-          featuredArticle={featuredArticle}
-          firstError={firstError}
-        />
-      )}
 
       {/* ── Top Banner ────────────────────────────────────────────────── */}
       {featuredAds[0] && (
@@ -719,9 +708,6 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ error }) => {
         )}
       </div>
 
-      {/* Troubleshooting hints */}
-      <TroubleshootingHints error={error} />
-
       <div className="mt-8 text-center">
         <button
           onClick={() => window.location.reload()}
@@ -734,126 +720,6 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ error }) => {
           Retry
         </button>
       </div>
-    </div>
-  );
-};
-
-/* ── Troubleshooting hints (contextual) ──────────────────────────────────── */
-
-const TroubleshootingHints: React.FC<{ error: ErrorDetails }> = ({ error }) => {
-  const hints: string[] = [];
-
-  if (error.errorType === "network") {
-    hints.push("Check that the API server is running.");
-    hints.push("Verify the VITE_API_BASE_URL / axios baseURL is correct.");
-    hints.push("Check for CORS issues in the browser Network tab (look for blocked preflight requests).");
-  }
-  if (error.errorType === "http" && error.status === 404) {
-    hints.push(`Endpoint "${error.url}" was not found — verify the route exists on the backend.`);
-  }
-  if (error.errorType === "http" && error.status === 401) {
-    hints.push("The request was unauthorised — check that auth tokens/headers are attached correctly.");
-  }
-  if (error.errorType === "http" && error.status === 500) {
-    hints.push("The server returned a 500 — check backend logs for the real exception.");
-  }
-  if (error.errorType === "timeout") {
-    hints.push("The request timed out — the server may be overloaded or the request is too slow.");
-  }
-
-  if (hints.length === 0) return null;
-
-  return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <p className="text-sm font-semibold text-blue-800 mb-2">💡 Troubleshooting</p>
-      <ul className="list-disc list-inside space-y-1">
-        {hints.map((h, i) => (
-          <li key={i} className="text-sm text-blue-700">{h}</li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-/* ── Debug Panel (dev only) ──────────────────────────────────────────────── */
-
-interface DebugPanelProps {
-  categories: Category[];
-  allQueries: ReturnType<typeof useGetArticlesByCategory>[];
-  categorySlugs: string[];
-  categoryArticles: Map<string, AppArticle[]>;
-  featuredArticle: AppArticle | null;
-  firstError: ErrorDetails | null;
-}
-
-const DebugPanel: React.FC<DebugPanelProps> = ({
-  categories,
-  allQueries,
-  categorySlugs,
-  categoryArticles,
-  featuredArticle,
-  firstError,
-}) => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="mb-6 border-2 border-dashed border-yellow-400 rounded-lg bg-yellow-50">
-      <button
-        onClick={() => setOpen((s) => !s)}
-        className="w-full text-left px-4 py-2 text-xs font-bold text-yellow-800 flex items-center justify-between"
-      >
-        <span>🐛 DEBUG PANEL (dev only)</span>
-        <span>{open ? "▲ hide" : "▼ show"}</span>
-      </button>
-      {open && (
-        <div className="px-4 pb-4 text-xs font-mono space-y-3">
-          {/* Overview */}
-          <div className="bg-white rounded p-3 border border-yellow-200">
-            <p className="font-bold mb-1 text-yellow-900">Overview</p>
-            <p>Categories loaded: <strong>{categories.length}</strong></p>
-            <p>Featured article: <strong>{featuredArticle ? featuredArticle.title.slice(0, 60) : "null"}</strong></p>
-            <p>Global error: <strong className={firstError ? "text-red-600" : "text-green-600"}>{firstError ? firstError.message : "none"}</strong></p>
-          </div>
-
-          {/* Per-category query status */}
-          <div className="bg-white rounded p-3 border border-yellow-200">
-            <p className="font-bold mb-2 text-yellow-900">Category Queries</p>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-yellow-200">
-                  <th className="pr-3 py-1">Slug</th>
-                  <th className="pr-3 py-1">Status</th>
-                  <th className="pr-3 py-1">FetchStatus</th>
-                  <th className="pr-3 py-1">Articles</th>
-                  <th className="py-1">Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categorySlugs.map((slug, i) => {
-                  const q = allQueries[i];
-                  return (
-                    <tr key={slug} className="border-b border-yellow-100">
-                      <td className="pr-3 py-1 text-gray-800">{slug || <em className="text-gray-400">—</em>}</td>
-                      <td className={`pr-3 py-1 ${q?.status === "success" ? "text-green-600" : q?.status === "error" ? "text-red-600" : "text-yellow-600"}`}>
-                        {q?.status ?? "—"}
-                      </td>
-                      <td className="pr-3 py-1 text-gray-600">{q?.fetchStatus ?? "—"}</td>
-                      <td className="pr-3 py-1 text-gray-800">
-                        {categoryArticles.get(slug)?.length ?? 0}
-                      </td>
-                      <td className="py-1 text-red-600 truncate max-w-[200px]">
-                        {q?.error
-                          ? getErrorDetails(q.error)?.message ?? "error"
-                          : <span className="text-green-600">ok</span>}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
