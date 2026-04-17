@@ -20,11 +20,44 @@ import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
 import Pagination from '../components/Pagination';
 import { ArticlePageSkeleton } from '../components/LoadingSkeletons';
-// import { trackVisitor } from '../utils/visitorTracking';
 import { ROUTES } from '../routes/routes';
+import { useSubscribe } from '../api/newsletter/NewsletterQueries';
+import { useAppSelector } from '../../shared/hooks/useRedux';
+import { selectUser, selectIsAuthenticated } from '../../features/authentication/store/slices/authSlice';
+
 const ArticlePage: React.FC = () => {
   const { articleSlug } = useParams<{ articleSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get auth state from Redux
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  
+  // Newsletter subscription state
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+  const [newsletterIsError, setNewsletterIsError] = useState(false);
+  
+  // Prefill email from auth slice if user is logged in
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      setNewsletterEmail(user.email);
+    }
+  }, [isAuthenticated, user]);
+  
+  // Subscribe mutation
+  const { mutate: subscribe, isPending: newsletterLoading } = useSubscribe({
+    onSuccess: (data) => {
+      setNewsletterMessage(data.message);
+      setNewsletterIsError(false);
+      setTimeout(() => setNewsletterMessage(''), 3000);
+    },
+    onError: (error: any) => {
+      setNewsletterMessage(error.response?.data?.message || 'Subscription failed');
+      setNewsletterIsError(true);
+      setTimeout(() => setNewsletterMessage(''), 3000);
+    },
+  });
   
   useEffect(() => {
     if (articleSlug) {
@@ -57,7 +90,6 @@ const ArticlePage: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        // Load article by slug directly from backend
         const articleData = await getArticleBySlug(articleSlug);
         if (!articleData) {
           setError('Article not found');
@@ -66,14 +98,11 @@ const ArticlePage: React.FC = () => {
         }
         setArticle(articleData);
 
-        // Record view using article ID
         await recordArticleView(articleData.id);
 
-        // Load related articles
         const related = await getRelatedArticles(articleData, 12);
         setAllRelatedArticles(related);
 
-        // Load ads
         const sidebar = selectRandomAd(articleData.category, 'sidebar');
         const bottom = selectRandomAd(articleData.category, 'bottom');
         
@@ -132,6 +161,12 @@ const ArticlePage: React.FC = () => {
     window.location.reload();
   };
 
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    subscribe({ email: newsletterEmail });
+  };
+
   if (loading) {
     return <ArticlePageSkeleton />;
   }
@@ -162,7 +197,6 @@ const ArticlePage: React.FC = () => {
   const currentUrl = window.location.href;
   const contentParagraphs = article.content ? article.content.split('\n\n') : [];
 
-  // Get category color
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
       world: 'bg-red-100 text-red-800',
@@ -436,28 +470,35 @@ const ArticlePage: React.FC = () => {
               </dl>
             </div>
 
-            {/* Newsletter Signup */}
+            {/* Newsletter Signup - Updated with useSubscribe hook */}
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Get the latest {article.category} articles delivered to your inbox.
               </p>
-              <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+              <form onSubmit={handleNewsletterSubmit} className="space-y-3">
                 <input
                   type="email"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
                   placeholder="Your email address"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-text"
+                  required
                 />
                 <button
                   type="submit"
-                  className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors cursor-pointer"
+                  disabled={newsletterLoading}
+                  className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Subscribe
+                  {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </form>
-              <p className="text-xs text-gray-500 mt-3 text-center">
-                No spam, unsubscribe anytime.
-              </p>
+              {newsletterMessage && (
+                <p className={`text-xs text-center mt-3 ${newsletterIsError ? 'text-red-600' : 'text-green-600'}`}>
+                  {newsletterMessage}
+                </p>
+              )}
+              
             </div>
           </div>
         </aside>
