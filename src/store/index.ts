@@ -1,4 +1,5 @@
 /**
+ * //index.ts
  * Redux store configuration
  * Purpose: Configure the main Redux store with middleware and persistence
  */

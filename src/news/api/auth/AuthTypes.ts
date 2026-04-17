@@ -1,4 +1,5 @@
 /**
+ * AuthTypes.ts
  * ============================================================================
  * AUTHENTICATION TYPE DEFINITIONS
  * ============================================================================
@@ -84,6 +85,8 @@ export interface RegisterValidationErrors {
   name?: string[];
   email?: string[];
   password?: string[];
+password_confirmation?: string[]; // Add this line
+
 }
 
 /**

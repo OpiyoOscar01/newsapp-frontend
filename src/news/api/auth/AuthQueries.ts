@@ -1,23 +1,20 @@
 /**
+ * AuthQueries.ts
  * ============================================================================
- * AUTHENTICATION REACT QUERY HOOKS
+ * AUTHENTICATION REACT QUERY HOOKS WITH REDUX INTEGRATION
  * ============================================================================
  * 
  * This file contains all React Query mutation and query hooks for authentication
- * operations including register, login, logout, profile management, and
- * password change functionality.
+ * operations. These hooks automatically update the Redux store on success.
  * 
  * @module useAuthQueries
- * @description Provides type-safe, reusable hooks for all authentication
- * operations with automatic token management and toast notifications.
- * 
- * @requires @tanstack/react-query
- * @requires axios
  */
 
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
+import { useDispatch } from 'react-redux';
 import { axiosInstance } from './../axiosConfig';
+import { setAuthData, clearAuth, updateUserData, setError }  from '../../../features/authentication/store/slices/authSlice';
 import type {
   RegisterRequest,
   RegisterResponse,
@@ -37,10 +34,6 @@ import type {
 /*                               QUERY KEYS                                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Centralized query keys for React Query caching and invalidation.
- * Hierarchical structure enables precise cache management for auth data.
- */
 export const authKeys = {
   all: ['auth'] as const,
   user: {
@@ -57,23 +50,13 @@ export const authKeys = {
 /*                           TOKEN MANAGEMENT                                 */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Storage key for auth data in localStorage
- */
 const AUTH_STORAGE_KEY = 'auth_data';
 
-/**
- * Save auth data to localStorage
- */
 export const saveAuthData = (data: StoredAuthData): void => {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
-  // Set default authorization header for all future requests
   axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
 };
 
-/**
- * Get stored auth data from localStorage
- */
 export const getStoredAuthData = (): StoredAuthData | null => {
   const data = localStorage.getItem(AUTH_STORAGE_KEY);
   if (!data) return null;
@@ -84,17 +67,11 @@ export const getStoredAuthData = (): StoredAuthData | null => {
   }
 };
 
-/**
- * Clear auth data from localStorage and reset axios headers
- */
 export const clearAuthData = (): void => {
   localStorage.removeItem(AUTH_STORAGE_KEY);
   delete axiosInstance.defaults.headers.common['Authorization'];
 };
 
-/**
- * Initialize axios interceptor for 401 responses
- */
 export const setupAuthInterceptor = (onUnauthorized: () => void): void => {
   axiosInstance.interceptors.response.use(
     (response) => response,
@@ -113,37 +90,16 @@ export const setupAuthInterceptor = (onUnauthorized: () => void): void => {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Register a new user
- * 
- * @param callbacks - Optional onSuccess and onError callbacks
- * @returns Mutation object with mutate function and state
- * 
- * @example
- * const { mutate: register, isLoading } = useRegister({
- *   onSuccess: (data) => {
- *     console.log('Registration successful', data);
- *     navigate('/dashboard');
- *   },
- *   onError: (error) => {
- *     console.error('Registration failed', error.response?.data?.message);
- *   }
- * });
- * 
- * register({
- *   first_name: 'John',
- *   last_name: 'Doe',
- *   email: 'john@example.com',
- *   password: 'password123',
- *   password_confirmation: 'password123'
- * });
+ * Register a new user - Automatically updates Redux store on success
  */
 export const useRegister = (
-  callbacks: {
+  callbacks?: {
     onSuccess?: (data: RegisterResponse) => void;
     onError?: (error: AxiosError<RegisterResponse>) => void;
-  } = {}
+  }
 ) => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   return useMutation<RegisterResponse, AxiosError<RegisterResponse>, RegisterRequest>({
     mutationFn: async (credentials: RegisterRequest) => {
@@ -152,54 +108,44 @@ export const useRegister = (
     },
     onSuccess: (data) => {
       if (data.success && data.data.access_token) {
-        // Save auth data to storage
+        // Save to localStorage
         saveAuthData({
           access_token: data.data.access_token,
           token_type: data.data.token_type,
           user: data.data.user,
         });
         
-        // Update query cache with user data
+        // Update Redux store
+        dispatch(setAuthData({
+          access_token: data.data.access_token,
+          token_type: data.data.token_type,
+          user: data.data.user,
+        }));
+        
+        // Update React Query cache
         queryClient.setQueryData(authKeys.user.profile(), data.data.user);
       }
-      callbacks.onSuccess?.(data);
+      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Registration failed:', error.response?.data?.message || error.message);
-      callbacks.onError?.(error);
+      dispatch(setError(error.response?.data?.message || 'Registration failed'));
+      callbacks?.onError?.(error);
     },
   });
 };
 
 /**
- * Login user
- * 
- * @param callbacks - Optional onSuccess and onError callbacks
- * @returns Mutation object with mutate function and state
- * 
- * @example
- * const { mutate: login, isLoading } = useLogin({
- *   onSuccess: (data) => {
- *     console.log('Login successful', data);
- *     navigate('/dashboard');
- *   },
- *   onError: (error) => {
- *     console.error('Login failed', error.response?.data?.message);
- *   }
- * });
- * 
- * login({
- *   email: 'john@example.com',
- *   password: 'password123'
- * });
+ * Login user - Automatically updates Redux store on success
  */
 export const useLogin = (
-  callbacks: {
+  callbacks?: {
     onSuccess?: (data: LoginResponse) => void;
     onError?: (error: AxiosError<LoginResponse>) => void;
-  } = {}
+  }
 ) => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   return useMutation<LoginResponse, AxiosError<LoginResponse>, LoginRequest>({
     mutationFn: async (credentials: LoginRequest) => {
@@ -208,47 +154,44 @@ export const useLogin = (
     },
     onSuccess: (data) => {
       if (data.success && data.data.access_token) {
-        // Save auth data to storage
+        // Save to localStorage
         saveAuthData({
           access_token: data.data.access_token,
           token_type: data.data.token_type,
           user: data.data.user,
         });
         
-        // Update query cache with user data
+        // Update Redux store
+        dispatch(setAuthData({
+          access_token: data.data.access_token,
+          token_type: data.data.token_type,
+          user: data.data.user,
+        }));
+        
+        // Update React Query cache
         queryClient.setQueryData(authKeys.user.profile(), data.data.user);
       }
-      callbacks.onSuccess?.(data);
+      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Login failed:', error.response?.data?.message || error.message);
-      callbacks.onError?.(error);
+      dispatch(setError(error.response?.data?.message || 'Login failed'));
+      callbacks?.onError?.(error);
     },
   });
 };
 
 /**
- * Logout user
- * 
- * @param callbacks - Optional onSuccess and onError callbacks
- * @returns Mutation object with mutate function and state
- * 
- * @example
- * const { mutate: logout } = useLogout({
- *   onSuccess: () => {
- *     navigate('/login');
- *   }
- * });
- * 
- * logout();
+ * Logout user - Automatically clears Redux store on success
  */
 export const useLogout = (
-  callbacks: {
+  callbacks?: {
     onSuccess?: () => void;
     onError?: (error: AxiosError<LogoutResponse>) => void;
-  } = {}
+  }
 ) => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   return useMutation<LogoutResponse, AxiosError<LogoutResponse>, void>({
     mutationFn: async () => {
@@ -256,41 +199,34 @@ export const useLogout = (
       return response.data;
     },
     onSuccess: () => {
-      // Clear auth data from storage
+      // Clear localStorage
       clearAuthData();
       
-      // Clear all auth-related queries from cache
+      // Clear Redux store
+      dispatch(clearAuth());
+      
+      // Clear React Query cache
       queryClient.removeQueries({ queryKey: authKeys.all });
       queryClient.clear();
       
-      callbacks.onSuccess?.();
+      callbacks?.onSuccess?.();
     },
     onError: (error) => {
       console.error('Logout failed:', error.response?.data?.message || error.message);
       // Still clear local data even if API call fails
       clearAuthData();
-      callbacks.onError?.(error);
+      dispatch(clearAuth());
+      callbacks?.onError?.(error);
     },
   });
 };
 
 /**
  * Get current authenticated user profile
- * 
- * @param options - React Query options for customizing behavior
- * @returns Query result with user profile
- * 
- * @example
- * const { data: profile, isLoading, refetch } = useGetProfile();
- * 
- * if (profile?.data.user) {
- *   console.log('User email:', profile.data.user.email);
- * }
  */
 export const useGetProfile = (
   options?: Omit<UseQueryOptions<ApiUser, AxiosError<ProfileResponse>>, 'queryKey' | 'queryFn'>
 ) => {
-  // Check if we have stored auth data
   const storedData = getStoredAuthData();
   const hasToken = !!storedData?.access_token;
 
@@ -300,38 +236,24 @@ export const useGetProfile = (
       const response = await axiosInstance.get<ProfileResponse>('/auth/profile');
       return response.data.data.user;
     },
-    enabled: hasToken, // Only fetch if we have a token
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: hasToken,
+    staleTime: 1000 * 60 * 5,
     retry: false,
     ...options,
   });
 };
 
 /**
- * Update user profile
- * 
- * @param callbacks - Optional onSuccess and onError callbacks
- * @returns Mutation object with mutate function and state
- * 
- * @example
- * const { mutate: updateProfile } = useUpdateProfile({
- *   onSuccess: (data) => {
- *     toast.success('Profile updated successfully');
- *   }
- * });
- * 
- * updateProfile({
- *   name: 'John Updated',
- *   email: 'john.updated@example.com'
- * });
+ * Update user profile - Automatically updates Redux store on success
  */
 export const useUpdateProfile = (
-  callbacks: {
+  callbacks?: {
     onSuccess?: (data: UpdateProfileResponse) => void;
     onError?: (error: AxiosError<UpdateProfileResponse>) => void;
-  } = {}
+  }
 ) => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
 
   return useMutation<UpdateProfileResponse, AxiosError<UpdateProfileResponse>, UpdateProfileRequest>({
     mutationFn: async (data: UpdateProfileRequest) => {
@@ -340,10 +262,13 @@ export const useUpdateProfile = (
     },
     onSuccess: (data) => {
       if (data.success && data.data.user) {
-        // Update user data in cache
+        // Update React Query cache
         queryClient.setQueryData(authKeys.user.profile(), data.data.user);
         
-        // Update stored user data
+        // Update Redux store
+        dispatch(updateUserData(data.data.user));
+        
+        // Update localStorage
         const storedData = getStoredAuthData();
         if (storedData) {
           saveAuthData({
@@ -352,40 +277,23 @@ export const useUpdateProfile = (
           });
         }
       }
-      callbacks.onSuccess?.(data);
+      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Profile update failed:', error.response?.data?.message || error.message);
-      callbacks.onError?.(error);
+      callbacks?.onError?.(error);
     },
   });
 };
 
 /**
  * Change user password
- * 
- * @param callbacks - Optional onSuccess and onError callbacks
- * @returns Mutation object with mutate function and state
- * 
- * @example
- * const { mutate: changePassword } = useChangePassword({
- *   onSuccess: () => {
- *     toast.success('Password changed successfully');
- *     navigate('/profile');
- *   }
- * });
- * 
- * changePassword({
- *   current_password: 'oldpassword',
- *   password: 'newpassword123',
- *   password_confirmation: 'newpassword123'
- * });
  */
 export const useChangePassword = (
-  callbacks: {
+  callbacks?: {
     onSuccess?: (data: ChangePasswordResponse) => void;
     onError?: (error: AxiosError<ChangePasswordResponse>) => void;
-  } = {}
+  }
 ) => {
   return useMutation<ChangePasswordResponse, AxiosError<ChangePasswordResponse>, ChangePasswordRequest>({
     mutationFn: async (data: ChangePasswordRequest) => {
@@ -393,25 +301,17 @@ export const useChangePassword = (
       return response.data;
     },
     onSuccess: (data) => {
-      callbacks.onSuccess?.(data);
+      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Password change failed:', error.response?.data?.message || error.message);
-      callbacks.onError?.(error);
+      callbacks?.onError?.(error);
     },
   });
 };
 
 /**
  * Check if user is authenticated (has valid token)
- * 
- * @returns Boolean indicating if user is authenticated
- * 
- * @example
- * const isAuthenticated = useIsAuthenticated();
- * if (!isAuthenticated) {
- *   navigate('/login');
- * }
  */
 export const useIsAuthenticated = (): boolean => {
   const storedData = getStoredAuthData();
@@ -420,15 +320,6 @@ export const useIsAuthenticated = (): boolean => {
 
 /**
  * Get current auth state with loading status
- * 
- * @returns Auth state object with user, loading status, and authentication flag
- * 
- * @example
- * const { user, isAuthenticated, isLoading } = useAuthState();
- * 
- * if (isLoading) return <LoadingSpinner />;
- * if (!isAuthenticated) return <Navigate to="/login" />;
- * return <div>Welcome, {user?.name}!</div>;
  */
 export const useAuthState = () => {
   const { data: user, isLoading } = useGetProfile();
@@ -445,9 +336,6 @@ export const useAuthState = () => {
 /*                           UTILITY FUNCTIONS                                */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Helper function to extract error message from Axios error
- */
 export const extractAuthErrorMessage = (
   error: AxiosError<RegisterResponse | LoginResponse | UpdateProfileResponse | ChangePasswordResponse>,
   fallbackMessage = 'An authentication error occurred.'
@@ -455,9 +343,6 @@ export const extractAuthErrorMessage = (
   return error.response?.data?.message || error.message || fallbackMessage;
 };
 
-/**
- * Helper function to format validation errors from auth responses
- */
 export const formatAuthValidationErrors = (
   errors?: Record<string, string[]>
 ): string => {
@@ -478,19 +363,14 @@ export const formatAuthValidationErrors = (
 /* -------------------------------------------------------------------------- */
 
 export default {
-  // Query hooks
   useGetProfile,
   useIsAuthenticated,
   useAuthState,
-  
-  // Mutation hooks
   useRegister,
   useLogin,
   useLogout,
   useUpdateProfile,
   useChangePassword,
-  
-  // Utilities
   authKeys,
   saveAuthData,
   getStoredAuthData,

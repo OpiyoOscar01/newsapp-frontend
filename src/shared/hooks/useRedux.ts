@@ -1,4 +1,4 @@
-/**
+/**useRedux.ts
  * Typed Redux hooks
  * Purpose: Provide properly typed useDispatch and useSelector hooks
  */

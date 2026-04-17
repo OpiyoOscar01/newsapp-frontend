@@ -14,30 +14,35 @@ import AdvertiseWithUs from '../components/AdvertiseWithUs';
 import Newsletter from '../components/NewsLetter';
 import ScrollToTop from '../components/ScrollToTop';
 import AdminDashboard from '../pages/AdminDashboard';
-import AdminLogin from '../pages/AdminLogin';
-
+import UserLogin from '../pages/UserLogin';
+import UserRegistration from '../pages/UserRegistration';
+import { ROUTES } from './routes';
+import NotFoundPage from '../pages/NotFoundPage';
 const AppRoutes: React.FC = () => {
   return (
     <>
       <ScrollToTop />
       <Routes>
         {/* Public Routes with Layout */}
-        <Route path="/" element={<Layout><LandingPage /></Layout>} />
-        <Route path="/category/:categorySlug" element={<Layout><CategoryPage /></Layout>} />
-        <Route path="/article/:articleId" element={<Layout><ArticlePage /></Layout>} />
-        <Route path="/search" element={<Layout><SearchPage /></Layout>} />
+        <Route path={ROUTES.HOME} element={<Layout><LandingPage /></Layout>} />
+        <Route path={ROUTES.CATEGORY} element={<Layout><CategoryPage /></Layout>} />
+        <Route path={ROUTES.ARTICLE} element={<Layout><ArticlePage /></Layout>} />
+        <Route path={ROUTES.SEARCH} element={<Layout><SearchPage /></Layout>} />
         
         {/* Public Pages with Layout */}
-        <Route path="/about" element={<Layout><AboutUs /></Layout>} />
-        <Route path="/contact" element={<Layout><ContactUs /></Layout>} />
-        <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
-        <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
-        <Route path="/advertise" element={<Layout><AdvertiseWithUs /></Layout>} />
-        <Route path="/newsletter" element={<Layout><Newsletter /></Layout>} />
+        <Route path={ROUTES.ABOUT} element={<Layout><AboutUs /></Layout>} />
+        <Route path={ROUTES.CONTACT} element={<Layout><ContactUs /></Layout>} />
+        <Route path={ROUTES.PRIVACY} element={<Layout><PrivacyPolicy /></Layout>} />
+        <Route path={ROUTES.TERMS} element={<Layout><TermsOfService /></Layout>} />
+        <Route path={ROUTES.ADVERTISE} element={<Layout><AdvertiseWithUs /></Layout>} />
+        <Route path={ROUTES.NEWSLETTER} element={<Layout><Newsletter /></Layout>} />
+        
+        {/* Auth Routes */}
+        <Route path={ROUTES.REGISTER} element={<Layout><UserRegistration /></Layout>} />
+        <Route path={ROUTES.LOGIN} element={<Layout><UserLogin /></Layout>} />
         
         {/* Admin Routes (without main layout) */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
         
         {/* 404 Page */}
         <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
@@ -47,34 +52,6 @@ const AppRoutes: React.FC = () => {
 };
 
 // 404 Not Found page
-const NotFoundPage: React.FC = () => {
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center">
-        <div className="mb-8">
-          <h1 className="text-9xl font-bold text-gray-300">404</h1>
-        </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Page Not Found</h2>
-        <p className="text-lg text-gray-600 mb-8">
-          Sorry, we couldn't find the page you're looking for. It might have been moved, deleted, or you entered the wrong URL.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a 
-            href="/" 
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-          >
-            Go to Homepage
-          </a>
-          <button 
-            onClick={() => window.history.back()}
-            className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+
 
 export default AppRoutes;
