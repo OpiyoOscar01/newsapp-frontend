@@ -1,3 +1,4 @@
+// src/data/dataService.ts
 import { type Article, type Category, type ArticleFilters } from '../types/news';
 import { categoryService } from '../services/news/categoryService';
 import { articleService } from '../services/news/articleService';
@@ -31,7 +32,6 @@ class DataService {
   async getCategories(options?: { forceRefresh?: boolean }): Promise<Category[]> {
     const force = options?.forceRefresh ?? false;
 
-    // Return cached data if valid
     if (!force && this.categoriesCache) {
       const age = Date.now() - this.categoriesCache.fetchedAt;
       if (age < this.DEFAULT_TTL) {
@@ -45,9 +45,7 @@ class DataService {
       return categories;
     } catch (err) {
       console.error('DataService.getCategories: failed to fetch', err);
-      // Return cached data if available
       if (this.categoriesCache) return this.categoriesCache.data;
-      // Return empty array as last resort
       return [];
     }
   }
@@ -84,7 +82,6 @@ class DataService {
     const cacheKey = this.generateCacheKey('articles', filters);
     const force = options?.forceRefresh ?? false;
 
-    // Return cached data if valid
     const cached = this.articlesCache.get(cacheKey);
     if (!force && cached && Date.now() - cached.fetchedAt < this.DEFAULT_TTL) {
       return cached.data;
@@ -96,7 +93,6 @@ class DataService {
       return articles;
     } catch (err) {
       console.error('DataService.getArticles: failed to fetch', err);
-      // Return cached data if available
       if (cached) return cached.data;
       return [];
     }
@@ -107,6 +103,22 @@ class DataService {
       return await articleService.getArticle(id);
     } catch (err) {
       console.error(`DataService.getArticleById(${id}) failed`, err);
+      return null;
+    }
+  }
+
+  // NEW METHOD: Get article by slug - converts slug to ID then fetches
+  async getArticleBySlug(slug: string): Promise<Article | null> {
+    try {
+      // First, get article ID from slug
+      const articleId = await articleService.getArticleIdBySlug(slug);
+      if (!articleId) {
+        return null;
+      }
+      // Then fetch by ID (keeping existing logic)
+      return await this.getArticleById(articleId);
+    } catch (err) {
+      console.error(`DataService.getArticleBySlug(${slug}) failed`, err);
       return null;
     }
   }
@@ -184,7 +196,6 @@ class DataService {
     try {
       const related = await articleService.getRelatedArticles(currentArticle.id, limit);
       
-      // If no related articles, fallback to same category
       if (related.length === 0) {
         const categoryArticles = await this.getArticlesByCategory(currentArticle.category, limit + 1);
         return categoryArticles.filter(a => a.id !== currentArticle.id).slice(0, limit);
@@ -248,6 +259,9 @@ export const getArticlesByCategory = (category: string, limit?: number) =>
 export const getArticleById = (id: string) => 
   dataService.getArticleById(id);
 
+export const getArticleBySlug = (slug: string) =>  // NEW EXPORT
+  dataService.getArticleBySlug(slug);
+
 export const getRelatedArticles = (article: Article, limit?: number) => 
   dataService.getRelatedArticles(article, limit);
 
@@ -264,8 +278,5 @@ export const getTrendingArticles = (limit?: number) => dataService.getTrendingAr
 export const getFeaturedArticles = () => dataService.getFeaturedArticles();
 export const recordArticleView = (id: string) => dataService.recordArticleView(id);
 export const clearCache = () => dataService.clearCache();
-
-// Export categories synchronously (they're loaded during navigation)
-export const categories = dataService.getCategoriesSync();
 
 export default dataService;

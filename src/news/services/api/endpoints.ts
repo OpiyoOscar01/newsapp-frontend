@@ -1,5 +1,6 @@
+// src/services/api/endpoints.ts
 import { apiClient } from './client';
-import { type ApiArticle,type ApiCategory, type ArticleFilters,} from '../../types/news'
+import { type ApiArticle, type ApiCategory, type ArticleFilters } from '../../types/news'
 
 export const apiEndpoints = {
   // Categories
@@ -15,6 +16,9 @@ export const apiEndpoints = {
     
     get: (id: string) => 
       apiClient.get<ApiArticle>(`/articles/${id}`),
+    
+    getBySlug: (slug: string) =>  // NEW METHOD
+      apiClient.get<ApiArticle>(`/articles/slug/${slug}`),
     
     recordView: (id: string) => 
       apiClient.post(`/articles/${id}/view`),

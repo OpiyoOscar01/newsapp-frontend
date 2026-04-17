@@ -4,7 +4,7 @@ export const ROUTES = {
   // Public Routes
   HOME: '/',
   CATEGORY: '/category/:categorySlug',
-  ARTICLE: '/article/:articleId',
+  ARTICLE: '/article/:articleSlug',  // Changed from :articleId to :articleSlug
   SEARCH: '/search',
   
   // Public Pages
@@ -29,9 +29,6 @@ export const ROUTES = {
   
   // Dynamic Route Builders
   buildCategoryRoute: (categorySlug: string) => `/category/${categorySlug}`,
-  buildArticleRoute: (articleId: string) => `/article/${articleId}`,
+  buildArticleRoute: (articleSlug: string) => `/article/${articleSlug}`,  // Changed parameter
   buildAdminRoute: (path: string) => `/admin/${path}`,
 } as const;
-
-// Type for route values
-export type RouteValue = typeof ROUTES[keyof typeof ROUTES];

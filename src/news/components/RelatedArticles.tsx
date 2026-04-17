@@ -1,7 +1,7 @@
 import React from 'react';
 import { type Article } from '../types';
 import { Link } from 'react-router-dom';
-
+import { ROUTES } from '../routes/routes';
 interface RelatedArticlesProps {
   articles: Article[];
   title?: string;
@@ -31,12 +31,12 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
             className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
           >
             <Link
-              to={`/article/${article.id}`}
+              to={ROUTES.buildArticleRoute(article.slug)}
               className="
                 flex flex-row-reverse items-stretch gap-3
                 p-2 sm:p-3 lg:p-4
                 bg-white rounded-lg hover:-translate-y-0.5
-                transition-all duration-200 ease-out w-full
+                transition-all duration-200 ease-out w-full cursor-pointer
               "
             >
               {/* 🖼️ Image Container */}

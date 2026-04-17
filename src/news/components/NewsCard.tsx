@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { type Article } from '../types';
 import { formatDate } from '../utils/formatDate';
+import { ROUTES } from '../routes/routes';
 
 interface NewsCardProps {
   article?: Article; // Made optional for skeleton state
@@ -418,7 +419,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'hero') {
     return (
       <article className={`group bg-white rounded-2xl sm:rounded-t-none shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden ${isFeaturedHero ? 'featured-hero-card' : ''} ${className}`}>
-        <Link to={`/article/${article.id}`} className="block">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="block cursor-pointer">
           {renderImage(
             "w-full h-64 sm:h-80 md:h-96",
             isFeaturedHero ? 'rounded-none sm:rounded-t-2xl' : ''
@@ -452,7 +453,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'large') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="flex flex-col h-full group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="flex flex-col h-full group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer">
           {renderImage("w-full h-56 sm:h-64 md:h-80")}
           <div className="p-5 md:p-6 flex flex-col flex-grow news-card-content">
             {/* Mobile category badge - above title for cards 2-4 */}
@@ -491,8 +492,8 @@ const NewsCard: React.FC<NewsCardProps> = ({
     return (
       <article className={cardClasses}>
         <Link
-          to={`/article/${article.id}`}
-          className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block h-full"
+          to={ROUTES.buildArticleRoute(article.slug)}
+          className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block h-full cursor-pointer"
         >
           <div
             className={`
@@ -631,7 +632,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'wide') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col md:flex-row">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col md:flex-row cursor-pointer">
           {showImage && (
             <div ref={containerRef} className="relative overflow-hidden md:w-1/2 flex-shrink-0">
               {/* Image skeleton/placeholder */}
@@ -695,7 +696,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'mini') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block p-3">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block p-3 cursor-pointer">
           {showImage && (
             <div ref={containerRef} className="relative overflow-hidden rounded mb-3">
               {/* Image skeleton/placeholder */}
@@ -744,7 +745,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'sidebar') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-4 block">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 p-4 block cursor-pointer">
           {showCategory && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide mb-2 ${getCategoryColor(article.category)}`}>
               {article.category}
@@ -767,7 +768,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'featured') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden block">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden block cursor-pointer">
           {renderImage("w-full h-64 md:h-80")}
           <div className="p-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors leading-tight line-clamp-3">
@@ -793,7 +794,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'spotlight') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-200">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-gradient-to-br from-gray-50 to-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-200 cursor-pointer">
           {renderImage("w-full h-56 md:h-72")}
           <div className="p-6">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors leading-tight">
@@ -819,7 +820,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   if (variant === 'medium') {
     return (
       <article className={cardClasses}>
-        <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden block">
+        <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden block cursor-pointer">
           {renderImage("w-full h-48 md:h-64")}
           <div className="p-5">
             <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-tight line-clamp-3">
@@ -844,7 +845,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
   // Standard Variant (Default)
   return (
     <article className={cardClasses}>
-      <Link to={`/article/${article.id}`} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block">
+      <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block cursor-pointer">
         {renderImage("w-full h-48")}
         <div className="p-4">
           <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors leading-snug line-clamp-3">

@@ -1,3 +1,5 @@
+import { type Article } from "../api/NewsTypes";
+export type {Article}
 export interface Ad {
   id: string;
   title: string;
@@ -29,18 +31,18 @@ export interface Category {
   articleCount?: number; // Add article count for dynamic categories
 }
 
-export interface Article {
-  id: string;
-  title: string;
-  summary: string;
-  content: string;
-  author: string;
-  publishedAt: string;
-  imageUrl: string;
-  category: string;
-  readTime: number;
-  tags: string[];
-}
+// export interface Article {
+//   id: string;
+//   title: string;
+//   summary: string;
+//   content: string;
+//   author: string;
+//   publishedAt: string;
+//   imageUrl: string;
+//   category: string;
+//   readTime: number;
+//   tags: string[];
+// }
 
 export interface ApiResponse<T> {
   success: boolean;

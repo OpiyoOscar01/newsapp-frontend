@@ -1,3 +1,4 @@
+// src/services/news/articleService.ts
 import { apiEndpoints } from '../api/endpoints';
 import { type Article, type ApiArticle, type ArticleFilters } from '../../types/news';
 
@@ -20,6 +21,28 @@ export class ArticleService {
       return apiArticle ? this.formatArticle(apiArticle) : null;
     } catch (error) {
       console.error(`ArticleService.getArticle(${id}) error:`, error);
+      return null;
+    }
+  }
+
+  // NEW METHOD: Get article by slug directly from backend
+  async getArticleBySlug(slug: string): Promise<Article | null> {
+    try {
+      const apiArticle = await apiEndpoints.articles.getBySlug(slug);
+      return apiArticle ? this.formatArticle(apiArticle) : null;
+    } catch (error) {
+      console.error(`ArticleService.getArticleBySlug(${slug}) error:`, error);
+      return null;
+    }
+  }
+
+  // Keep this for backward compatibility if needed
+  async getArticleIdBySlug(slug: string): Promise<string | null> {
+    try {
+      const article = await this.getArticleBySlug(slug);
+      return article?.id || null;
+    } catch (error) {
+      console.error(`ArticleService.getArticleIdBySlug(${slug}) error:`, error);
       return null;
     }
   }
@@ -122,7 +145,6 @@ export class ArticleService {
                    '';
 
     const tags = this.parseTags(apiArticle.tags as any, apiArticle.category);
-    // const categoryName = apiArticle.category_model?.name || apiArticle.category;
 
     return {
       id: apiArticle.id.toString(),
@@ -139,6 +161,7 @@ export class ArticleService {
       source: apiArticle.source || undefined,
       viewCount: apiArticle.view_count,
       isFeatured: apiArticle.is_featured,
+      slug: apiArticle.slug,  // Make sure slug is included
     };
   }
 

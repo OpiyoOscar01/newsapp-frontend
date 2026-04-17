@@ -65,6 +65,7 @@ export interface Article {
   source?: string;
   viewCount?: number;
   isFeatured?: boolean;
+  slug?:string
 }
 
 export interface Category {

@@ -167,7 +167,7 @@ const formatArticle = (apiArticle: ApiArticle): AppArticle => {
     source: apiArticle.source ?? undefined,
     viewCount: apiArticle.view_count,
     isFeatured: apiArticle.is_featured,
-    slug: apiArticle.slug,
+    slug: apiArticle.slug, // This is the slug for URL routing
   };
 };
 
@@ -416,7 +416,7 @@ const LandingPage: React.FC = () => {
   };
 
   const generalCategory = categories.find((c) => c.slug === "general") ?? categories[0];
-  const remainingCategories = categories.filter((c) => c.id !== generalCategory?.id);
+  const remainingCategories = categories.filter((c) => c.slug !== generalCategory?.slug);
 
   /* ====================================================================== */
   /*                              EARLY RETURNS                             */
@@ -508,7 +508,7 @@ const LandingPage: React.FC = () => {
           <CategorySection
             category={generalCategory}
             articleCount={categoryArticles.get(generalCategory.slug)?.length ?? 0}
-            isLoading={allQueries[categories.indexOf(generalCategory)]?.isLoading ?? false}
+            isLoading={allQueries[categories.findIndex(c => c.slug === generalCategory.slug)]?.isLoading ?? false}
           >
             <BigContainer
               articles={getCategorySlice(generalCategory.slug, true)}
@@ -522,13 +522,13 @@ const LandingPage: React.FC = () => {
         {/* Remaining / Normal Containers */}
         {remainingCategories.map((category, index) => {
           const articles = getCategorySlice(category.slug, false);
-          const catIndex = categories.indexOf(category);
+          const catIndex = categories.findIndex(c => c.slug === category.slug);
           const isLoadingCat = allQueries[catIndex]?.isLoading ?? false;
 
           // Show skeleton placeholder while this specific category loads
           if (isLoadingCat) {
             return (
-              <section key={category.id} className="scroll-mt-20" data-category={category.slug}>
+              <section key={category.slug} className="scroll-mt-20" data-category={category.slug}>
                 <div className="animate-pulse">
                   <div className="h-8 bg-gray-200 rounded w-48 mb-8" />
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -548,7 +548,7 @@ const LandingPage: React.FC = () => {
 
           return (
             <CategorySection
-              key={category.id}
+              key={category.slug}
               category={category}
               articleCount={categoryArticles.get(category.slug)?.length ?? 0}
               isLoading={false}
@@ -697,7 +697,7 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ error }) => {
       <div className="mb-6">
         <button
           onClick={() => setShowRaw((s) => !s)}
-          className="text-sm text-gray-500 underline hover:text-gray-700 transition-colors"
+          className="text-sm text-gray-500 underline hover:text-gray-700 transition-colors cursor-pointer"
         >
           {showRaw ? "Hide" : "Show"} raw error details
         </button>
@@ -711,7 +711,7 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ error }) => {
       <div className="mt-8 text-center">
         <button
           onClick={() => window.location.reload()}
-          className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+          className="inline-flex items-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors cursor-pointer"
         >
           <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -749,19 +749,19 @@ const NewsletterSection: React.FC = () => (
             <input
               type="email"
               placeholder="Enter your email address"
-              className="flex-1 px-5 md:px-6 py-3 md:py-4 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white shadow-sm"
+              className="flex-1 px-5 md:px-6 py-3 md:py-4 text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white shadow-sm cursor-text"
               required
             />
             <button
               type="submit"
-              className="px-6 md:px-8 py-3 md:py-4 bg-primary-600 text-white text-base font-semibold rounded-xl hover:bg-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="px-6 md:px-8 py-3 md:py-4 bg-primary-600 text-white text-base font-semibold rounded-xl hover:bg-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl cursor-pointer"
             >
               Subscribe
             </button>
           </form>
           <p className="text-sm text-gray-500 mt-6">
             By subscribing, you agree to our{" "}
-            <Link to="/privacy" className="text-primary-600 hover:underline">
+            <Link to="/privacy" className="text-primary-600 hover:underline cursor-pointer">
               Privacy Policy
             </Link>
             .

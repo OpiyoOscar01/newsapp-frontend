@@ -1,9 +1,37 @@
-import React from 'react';
+// src/components/Footer.tsx
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { categories } from '../data/dataService';
+import { getCategories, getCategoriesSync } from '../data/dataService';
+import type { Category } from '../types/news';
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        // Try to get sync categories first (if already loaded)
+        const syncCategories = getCategoriesSync();
+        if (syncCategories.length > 0) {
+          setCategories(syncCategories);
+          setLoading(false);
+          return;
+        }
+
+        // If no sync categories, fetch them
+        const fetchedCategories = await getCategories();
+        setCategories(fetchedCategories.slice(0, 6)); // Get first 6 categories
+      } catch (error) {
+        console.error('Failed to load categories in footer:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -11,7 +39,7 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="text-2xl font-bold text-white hover:text-primary-400 transition-colors">
+            <Link to="/" className="text-2xl font-bold text-white hover:text-primary-400 transition-colors cursor-pointer">
               DefinePress
             </Link>
             <p className="mt-4 text-gray-400 max-w-md">
@@ -22,7 +50,7 @@ const Footer: React.FC = () => {
               {/* Social Media Links */}
               <a 
                 href="#" 
-                className="text-gray-400 hover:text-primary-400 transition-colors"
+                className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer"
                 aria-label="Follow us on Twitter"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -31,7 +59,7 @@ const Footer: React.FC = () => {
               </a>
               <a 
                 href="#" 
-                className="text-gray-400 hover:text-primary-400 transition-colors"
+                className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer"
                 aria-label="Follow us on Facebook"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -40,7 +68,7 @@ const Footer: React.FC = () => {
               </a>
               <a 
                 href="#" 
-                className="text-gray-400 hover:text-primary-400 transition-colors"
+                className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer"
                 aria-label="Follow us on LinkedIn"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -49,7 +77,7 @@ const Footer: React.FC = () => {
               </a>
               <a 
                 href="#" 
-                className="text-gray-400 hover:text-primary-400 transition-colors"
+                className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer"
                 aria-label="Follow us on Instagram"
               >
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -63,18 +91,26 @@ const Footer: React.FC = () => {
           {/* Categories */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Categories</h3>
-            <ul className="space-y-2">
-              {categories.slice(0, 6).map((category) => (
-                <li key={category.id}>
-                  <Link
-                    to={`/category/${category.slug}`}
-                    className="text-gray-400 hover:text-primary-400 transition-colors capitalize"
-                  >
-                    {category.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-5 bg-gray-700 rounded animate-pulse w-24"></div>
+                ))}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {categories.map((category) => (
+                  <li key={category.slug}>
+                    <Link
+                      to={`/category/${category.slug}`}
+                      className="text-gray-400 hover:text-primary-400 transition-colors capitalize cursor-pointer"
+                    >
+                      {category.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Quick Links */}
@@ -82,22 +118,22 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-primary-400 transition-colors">
+                <Link to="/about" className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-400 hover:text-primary-400 transition-colors">
+                <Link to="/contact" className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer">
                   Contact
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-400 hover:text-primary-400 transition-colors">
+                <Link to="/privacy" className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="text-gray-400 hover:text-primary-400 transition-colors">
+                <Link to="/terms" className="text-gray-400 hover:text-primary-400 transition-colors cursor-pointer">
                   Terms of Service
                 </Link>
               </li>
@@ -112,13 +148,13 @@ const Footer: React.FC = () => {
               © {currentYear} DefinePress. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex space-x-6">
-              <Link to="/rss" className="text-gray-400 hover:text-primary-400 transition-colors text-sm">
+              <Link to="/rss" className="text-gray-400 hover:text-primary-400 transition-colors text-sm cursor-pointer">
                 RSS Feed
               </Link>
-              <Link to="/sitemap" className="text-gray-400 hover:text-primary-400 transition-colors text-sm">
+              <Link to="/sitemap" className="text-gray-400 hover:text-primary-400 transition-colors text-sm cursor-pointer">
                 Sitemap
               </Link>
-              <Link to="/accessibility" className="text-gray-400 hover:text-primary-400 transition-colors text-sm">
+              <Link to="/accessibility" className="text-gray-400 hover:text-primary-400 transition-colors text-sm cursor-pointer">
                 Accessibility
               </Link>
             </div>
