@@ -1,20 +1,55 @@
 // src/components/Navbar.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  Menu, 
+  X, 
+  LayoutDashboard, 
+  LogOut, 
+  ChevronDown,
+  Newspaper,
+  TrendingUp,
+  FileText,
+  Globe,
+  Briefcase,
+  Tv,
+  Beaker,
+  Trophy,
+  Sparkles
+} from 'lucide-react';
 import { dataService } from '../data/dataService';
-import { apiClient } from '../services/api/client';
 import { type Category } from '../types/news';
 import SearchBar from './SearchBar';
+import { ROUTES } from '../routes/routes';
+import { useAppSelector } from '../../shared/hooks/useRedux';
+import { selectIsAuthenticated, selectUser } from '../../features/authentication/store/slices/authSlice';
+import { useLogout } from '../api/auth/AuthQueries';
 
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get auth state from Redux
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectUser);
+  
+  // Use logout hook from AuthQueries
+  const { mutate: logout } = useLogout({
+    onSuccess: () => {
+      setIsMobileMenuOpen(false);
+      navigate(ROUTES.HOME);
+    },
+    onError: () => {
+      setIsMobileMenuOpen(false);
+      navigate(ROUTES.HOME);
+    }
+  });
 
   // Load categories from API
   useEffect(() => {
@@ -39,28 +74,6 @@ const Navbar: React.FC = () => {
     loadCategories();
   }, []);
 
-  // Check user authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setAuthLoading(true);
-        // Only check auth if we have a token
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          const userData = await apiClient.get('/user');
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setUser(null);
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -74,39 +87,31 @@ const Navbar: React.FC = () => {
   }, [isMobileMenuOpen]);
 
   const handleSearch = (query: string) => {
-    console.log('🔍 Navbar search triggered:', query);
-    
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      navigate(`${ROUTES.SEARCH}?q=${encodeURIComponent(query.trim())}`);
     } else {
-      navigate('/search');
+      navigate(ROUTES.SEARCH);
     }
-    
     setIsMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLogin = () => {
-    navigate('/admin/login');
+    navigate(ROUTES.LOGIN);
     setIsMobileMenuOpen(false);
   };
 
-  const handleLogout = async () => {
-    try {
-      await apiClient.post('/auth/logout');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      apiClient.removeToken();
-      setUser(null);
-      setIsMobileMenuOpen(false);
-      // Refresh the page to reset all states
-      window.location.href = '/';
-    }
+  const handleRegister = () => {
+    navigate(ROUTES.REGISTER);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   const handleAdminDashboard = () => {
-    navigate('/admin/dashboard');
+    navigate(ROUTES.ADMIN_DASHBOARD);
     setIsMobileMenuOpen(false);
   };
 
@@ -114,9 +119,28 @@ const Navbar: React.FC = () => {
     return location.pathname === path;
   };
 
-  // const handleRetry = () => {
-  //   window.location.reload();
-  // };
+  // Get category icon based on category name
+  const getCategoryIcon = (categoryName: string, index: number) => {
+    const iconMap: { [key: string]: any } = {
+      'general': Sparkles,
+      'technology': TrendingUp,
+      'business': Briefcase,
+      'sports': Trophy,
+      'science': Beaker,
+      'entertainment': Tv,
+      'world': Globe,
+    };
+    
+    const IconComponent = iconMap[categoryName.toLowerCase()];
+    if (IconComponent) {
+      return <IconComponent className="w-5 h-5" />;
+    }
+    
+    // Fallback icons based on index
+    const fallbackIcons = [Globe, Briefcase, Tv, Beaker, Trophy, Newspaper, FileText];
+    const FallbackIcon = fallbackIcons[index % fallbackIcons.length];
+    return <FallbackIcon className="w-5 h-5" />;
+  };
 
   // Show loading state
   if (loading) {
@@ -125,14 +149,14 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-gray-800">
+              <Link to={ROUTES.HOME} className="text-2xl font-bold text-gray-800 cursor-pointer">
                 DefinePress
               </Link>
             </div>
             <div className="hidden md:block">
               <div className="animate-pulse flex space-x-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-6 w-20 bg-gray-200 rounded"></div>
+                  <div key={i} className="h-6 w-20 bg-gray-200 rounded cursor-pointer"></div>
                 ))}
               </div>
             </div>
@@ -149,11 +173,11 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link
-              to="/"
+              to={ROUTES.HOME}
               className="relative inline-block text-3xl font-extrabold tracking-tight text-transparent bg-clip-text 
                bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 
                hover:from-blue-500 hover:via-blue-600 hover:to-blue-800 
-               transition-all duration-300"
+               transition-all duration-300 cursor-pointer"
             >
               Define<span className="text-gray-800">Press</span>
               <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-blue-400 to-blue-700 scale-x-0 hover:scale-x-100 origin-left transition-transform duration-300"></span>
@@ -161,50 +185,48 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-        <div className="hidden md:block">
-        <div className="ml-10 flex items-baseline space-x-4">
-          <Link
-            to="/"
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              isActiveRoute('/') 
-                ? 'text-primary-600 bg-primary-50' 
-                : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
-            }`}
-          >
-            Home
-          </Link>
-          
-          {/* Sort categories: general first, then the rest */}
-          {(() => {
-            // Find the "general" category
-            const generalCategory = categories.find(cat => cat.slug === 'general');
-            // Get all other categories (excluding "general")
-            const otherCategories = categories.filter(cat => cat.slug !== 'general');
-            
-            // Create new array with "general" first (if it exists)
-            const sortedCategories = [];
-            if (generalCategory) {
-              sortedCategories.push(generalCategory);
-            }
-            sortedCategories.push(...otherCategories);
-            
-            // Render the sorted categories
-            return sortedCategories.map((category) => (
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-4">
               <Link
-                key={category.id}
-                to={`/category/${category.slug}`}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                  isActiveRoute(`/category/${category.slug}`)
-                    ? 'text-primary-600 bg-primary-50'
-                    : 'text-gray-700 hover:text-primary-600 hover:bg-gray-100'
+                to={ROUTES.HOME}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1 cursor-pointer ${
+                  isActiveRoute(ROUTES.HOME) 
+                    ? 'text-blue-600 bg-blue-50' 
+                    : 'text-gray-700 hover:text-blue-600 hover:bg-gray-100'
                 }`}
               >
-                {category.name}
+                <Home className="w-4 h-4" />
+                <span>Home</span>
               </Link>
-            ));
-          })()}
-        </div>
-      </div>
+              
+              {/* Sort categories: general first, then the rest */}
+              {(() => {
+                const generalCategory = categories.find(cat => cat.slug === 'general');
+                const otherCategories = categories.filter(cat => cat.slug !== 'general');
+                const sortedCategories = [];
+                if (generalCategory) {
+                  sortedCategories.push(generalCategory);
+                }
+                sortedCategories.push(...otherCategories);
+                
+                return sortedCategories.map((category, idx) => (
+                  <Link
+                    key={category.id}
+                    to={`/category/${category.slug}`}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize flex items-center space-x-1 cursor-pointer ${
+                      isActiveRoute(`/category/${category.slug}`)
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-700 hover:text-blue-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {getCategoryIcon(category.name, idx)}
+                    <span>{category.name}</span>
+                  </Link>
+                ));
+              })()}
+            </div>
+          </div>
+          
           {/* Right Section - Search & Auth */}
           <div className="hidden md:flex items-center space-x-4 flex-1 justify-end">
             {/* Search Bar - Desktop */}
@@ -218,36 +240,33 @@ const Navbar: React.FC = () => {
 
             {/* Auth Section */}
             <div className="flex items-center space-x-3">
-              {authLoading ? (
-                <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
-              ) : user ? (
+              {isAuthenticated && user ? (
                 <div className="flex items-center space-x-3">
-                  {/* Admin Dashboard Button */}
-                  <button
-                    onClick={handleAdminDashboard}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors flex items-center space-x-1"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Dashboard</span>
-                  </button>
+                  {/* Admin Dashboard Button - Only show for admin users */}
+                  {user.is_admin && (
+                    <button
+                      onClick={handleAdminDashboard}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors flex items-center space-x-1 cursor-pointer"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>Dashboard</span>
+                    </button>
+                  )}
 
                   {/* User Menu */}
                   <div className="relative group">
-                    <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-primary-600 text-sm font-semibold">
-                          {user.name ? user.name.charAt(0).toUpperCase() : user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                    <button className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors cursor-pointer">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-blue-600 text-sm font-semibold">
+                          {user.first_name ? user.first_name.charAt(0).toUpperCase() : 
+                           user.name ? user.name.charAt(0).toUpperCase() : 
+                           user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                         </span>
                       </div>
                       <span className="hidden lg:block">
-                        {user.name || user.email?.split('@')[0]}
+                        {user.first_name || user.name || user.email?.split('@')[0]}
                       </span>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDown className="w-4 h-4" />
                     </button>
 
                     {/* Dropdown Menu */}
@@ -256,31 +275,40 @@ const Navbar: React.FC = () => {
                         Signed in as<br />
                         <span className="font-medium text-gray-900">{user.email}</span>
                       </div>
-                      <button
-                        onClick={handleAdminDashboard}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                      >
-                        Admin Dashboard
-                      </button>
+                      {user.is_admin && (
+                        <button
+                          onClick={handleAdminDashboard}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          <LayoutDashboard className="w-4 h-4 inline mr-2" />
+                          Dashboard
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                       >
+                        <LogOut className="w-4 h-4 inline mr-2" />
                         Sign out
                       </button>
                     </div>
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={handleLogin}
-                  className="px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors flex items-center space-x-1"
-                >
-                  {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg> */}
-                  {/* <span>Admin Login</span> */}
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={handleRegister}
+                    className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors cursor-pointer"
+                  >
+                    Sign Up
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -289,19 +317,14 @@ const Navbar: React.FC = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors cursor-pointer"
               aria-expanded={isMobileMenuOpen}
               aria-label="Toggle navigation menu"
             >
-              <span className="sr-only">Open main menu</span>
               {!isMobileMenuOpen ? (
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu className="h-6 w-6" />
               ) : (
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-6 w-6" />
               )}
             </button>
           </div>
@@ -313,7 +336,7 @@ const Navbar: React.FC = () => {
         <>
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 z-40 bg-gray-900/20 backdrop-blur-sm animate-fadeIn"
+            className="md:hidden fixed inset-0 z-40 bg-gray-900/20 backdrop-blur-sm animate-fadeIn cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-hidden="true"
           />
@@ -322,33 +345,31 @@ const Navbar: React.FC = () => {
           <div className="md:hidden fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white shadow-2xl animate-slideInRight">
             <div className="flex flex-col h-full">
               {/* Header Section */}
-              <div className="flex items-center justify-between px-6 py-5">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">Menu</h2>
-                </div>
+              <div className="flex items-center justify-between px-6 py-5 border-b">
+                <h2 className="text-lg font-bold text-gray-900">Menu</h2>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200"
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 cursor-pointer"
                   aria-label="Close menu"
                 >
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="h-6 w-6" />
                 </button>
               </div>
 
-              {/* User Info Section */}
-              {!authLoading && user && (
+              {/* User Info Section - Only for authenticated users */}
+              {isAuthenticated && user && (
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                      <span className="text-primary-600 text-sm font-semibold">
-                        {user.name ? user.name.charAt(0).toUpperCase() : user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 text-sm font-semibold">
+                        {user.first_name ? user.first_name.charAt(0).toUpperCase() : 
+                         user.name ? user.name.charAt(0).toUpperCase() : 
+                         user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {user.name || 'Admin User'}
+                        {user.first_name || user.name || 'User'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {user.email}
@@ -359,7 +380,7 @@ const Navbar: React.FC = () => {
               )}
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto pl-10 py-1 w-full">
+              <div className="flex-1 overflow-y-auto py-4">
                 {/* Search Section */}
                 <div className="mb-6 px-4">
                   <SearchBar 
@@ -370,133 +391,90 @@ const Navbar: React.FC = () => {
                 </div>
 
                 {/* Navigation Links */}
-                <div>
-                  <nav className="space-y-1">
-                    <Link
-                      to="/"
-                      className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 ${
-                        isActiveRoute('/')
-                          ? 'text-primary-600 bg-primary-50'
-                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <svg 
-                        className={`w-5 h-5 mr-3 ${
-                          isActiveRoute('/') ? 'text-primary-600' : 'text-gray-400'
+                <nav className="space-y-1 px-4">
+                  <Link
+                    to={ROUTES.HOME}
+                    className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium transition-all duration-200 cursor-pointer ${
+                      isActiveRoute(ROUTES.HOME)
+                        ? 'text-blue-600 bg-blue-50'
+                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Home className={`w-5 h-5 mr-3 ${isActiveRoute(ROUTES.HOME) ? 'text-blue-600' : 'text-gray-400'}`} />
+                    <span>Home</span>
+                  </Link>                  
+
+                  {categories.map((category, idx) => {
+                    const isActive = isActiveRoute(`/category/${category.slug}`);
+                    return (
+                      <Link
+                        key={category.id}
+                        to={`/category/${category.slug}`}
+                        className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium capitalize transition-all duration-200 cursor-pointer ${
+                          isActive
+                            ? 'text-blue-600 bg-blue-50'
+                            : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                         }`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                      <span>Home</span>
-                    </Link>                  
+                        <div className={`mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`}>
+                          {getCategoryIcon(category.name, idx)}
+                        </div>
+                        <span>{category.name}</span>
+                      </Link>
+                    );
+                  })}
 
-                    {categories.map((category, index) => {
-                      const isActive = isActiveRoute(`/category/${category.slug}`);
-                      const categoryIcons = [
-                        'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', // Technology
-                        'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', // Business
-                        'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', // Sports
-                        'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z', // Science
-                        'M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z', // Entertainment
-                        'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z' // World
-                      ];
-                      
-                      return (
-                        <Link
-                          key={category.id}
-                          to={`/category/${category.slug}`}
-                          className={`group flex items-center px-4 py-3 rounded-lg text-base font-medium capitalize transition-all duration-200 ${
-                            isActive
-                              ? 'text-primary-600 bg-primary-50'
-                              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent'
-                          }`}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          <svg 
-                            className={`w-5 h-5 mr-3 ${
-                              isActive ? 'text-primary-600' : 'text-gray-400'
-                            }`}
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={categoryIcons[index % categoryIcons.length]} />
-                          </svg>
-                          <span>{category.name}</span>
-                        </Link>
-                      );
-                    })}
-
-                    {/* Admin Section in Mobile Menu */}
-                    <div className="border-t border-gray-200 mt-4 pt-4">
-                      {!authLoading && user && (
-                        <>
+                  {/* Auth Section in Mobile Menu */}
+                  <div className="border-t border-gray-200 mt-4 pt-4">
+                    {isAuthenticated && user ? (
+                      <>
+                        {user.is_admin && (
                           <button
                             onClick={handleAdminDashboard}
-                            className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-l-4 border-transparent transition-all duration-200"
+                            className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
                           >
-                            <svg 
-                              className="w-5 h-5 mr-3 text-gray-400 group-hover:text-gray-500"
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            <span>Admin Dashboard</span>
+                            <LayoutDashboard className="w-5 h-5 mr-3 text-gray-400" />
+                            <span>Dashboard</span>
                           </button>
-                          <button
-                            onClick={handleLogout}
-                            className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-l-4 border-transparent transition-all duration-200"
-                          >
-                            <svg 
-                              className="w-5 h-5 mr-3 text-red-400 group-hover:text-red-500"
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            <span>Sign Out</span>
-                          </button>
-                        </>
-                      ) 
-                      // : (
-                      //   // <button
-                      //   //   onClick={handleLogin}
-                      //   //   className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 border-l-4 border-transparent transition-all duration-200"
-                      //   // >
-                      //   //   {/* <svg 
-                      //   //     className="w-5 h-5 mr-3 text-primary-400 group-hover:text-primary-500"
-                      //   //     fill="none" 
-                      //   //     stroke="currentColor" 
-                      //   //     viewBox="0 0 24 24"
-                      //   //   >
-                      //   //     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                      //   //   </svg> 
-                      //   //    <span>Admin Login</span> */}
-                      //   // </button>
-                      // )}
-                    }
-                    </div>
-                  </nav>
-                </div>
+                        )}
+                        <button
+                          onClick={handleLogout}
+                          className="group flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 cursor-pointer"
+                        >
+                          <LogOut className="w-5 h-5 mr-3 text-red-400" />
+                          <span>Sign Out</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleLogin}
+                          className="w-full mb-2 px-4 py-3 text-base font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 cursor-pointer"
+                        >
+                          Sign In
+                        </button>
+                        <button
+                          onClick={handleRegister}
+                          className="w-full px-4 py-3 text-base font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 cursor-pointer"
+                        >
+                          Create Account
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </nav>
               </div>
 
               {/* Footer Section */}
-              <div className="px-6 py-4 border-gray-100">
-                  <div className="flex items-center justify-center text-sm">
-                    <span className="text-gray-500 text-xs">
-                      © {new Date().getFullYear()} DefinePress
-                    </span>
-                  </div>
+              <div className="px-6 py-4 border-t border-gray-100">
+                <div className="flex items-center justify-center">
+                  <span className="text-gray-500 text-xs">
+                    © {new Date().getFullYear()} DefinePress
+                  </span>
                 </div>
-
+              </div>
             </div>
           </div>
         </>
