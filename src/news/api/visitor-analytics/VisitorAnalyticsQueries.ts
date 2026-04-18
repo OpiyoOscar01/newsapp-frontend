@@ -1,14 +1,21 @@
 /**
  * VisitorAnalyticsQueries.ts
  * ============================================================================
- * VISITOR ANALYTICS REACT QUERY HOOKS
+ * VISITOR ANALYTICS REACT QUERY HOOKS + TRACKING ENGINE
  * ============================================================================
  *
- * This file contains all React Query hooks and browser-side helpers for
- * visitor tracking, realtime stats, exports, optimistic queue syncing,
- * and analytics dashboard data retrieval.
+ * Matches backend routes:
+ *   POST   /v1/analytics/visitors/track
+ *   GET    /v1/analytics/visitors/stats
+ *   GET    /v1/analytics/visitors/realtime
+ *   GET    /v1/analytics/visitors/recent
+ *   GET    /v1/analytics/visitors/export
+ *   DELETE /v1/admin/analytics/visitors/cleanup
  *
- * @module useVisitorAnalyticsQueries
+ * Notes:
+ * - axiosInstance already carries the configured base URL
+ * - no manual sync is required in the UI
+ * - failed track events are queued locally and auto-retried
  */
 
 import { useEffect, useMemo } from 'react';
@@ -32,6 +39,8 @@ import type {
   VisitorCleanupResponse,
   VisitorExportData,
   VisitorExportResponse,
+  VisitorLog,
+  VisitorRecentEventsResponse,
   VisitorStats,
   VisitorStatsResponse,
   VisitorSyncStatus,
@@ -47,17 +56,19 @@ import {
   normalizeRealtimeVisitors,
   normalizeVisitorExport,
   normalizeVisitorStats,
+  toVisitorLogModel,
 } from './VisitorAnalyticsTypes';
 
 /* -------------------------------------------------------------------------- */
-/*                               QUERY KEYS                                   */
+/*                                 QUERY KEYS                                 */
 /* -------------------------------------------------------------------------- */
 
 export const visitorAnalyticsKeys = {
   all: ['visitor-analytics'] as const,
   stats: {
     all: () => [...visitorAnalyticsKeys.all, 'stats'] as const,
-    detail: (days: VisitorAnalyticsTimeRange | number) => [...visitorAnalyticsKeys.stats.all(), days] as const,
+    detail: (days: VisitorAnalyticsTimeRange | number) =>
+      [...visitorAnalyticsKeys.stats.all(), days] as const,
   },
   realtime: {
     all: () => [...visitorAnalyticsKeys.all, 'realtime'] as const,
@@ -66,10 +77,14 @@ export const visitorAnalyticsKeys = {
     all: () => [...visitorAnalyticsKeys.all, 'sync'] as const,
     status: () => [...visitorAnalyticsKeys.sync.all(), 'status'] as const,
   },
+  recent: {
+    all: () => [...visitorAnalyticsKeys.all, 'recent'] as const,
+    detail: (limit: number) => [...visitorAnalyticsKeys.recent.all(), limit] as const,
+  },
 };
 
 /* -------------------------------------------------------------------------- */
-/*                             LOCAL STORAGE KEYS                             */
+/*                               STORAGE KEYS                                 */
 /* -------------------------------------------------------------------------- */
 
 const VISITOR_SESSION_KEY = 'visitor_analytics_session_id';
@@ -77,11 +92,14 @@ const UNIQUE_VISITOR_KEY = 'visitor_analytics_unique_visitor_id';
 const PENDING_EVENTS_KEY = 'visitor_analytics_pending_events';
 const LAST_SYNC_KEY = 'visitor_analytics_last_sync';
 const SESSION_TRACKED_KEY = 'visitor_analytics_session_tracked';
+const LAST_TRACKED_PAYLOAD_KEY = 'visitor_analytics_last_payload';
+const LAST_ROUTE_TRACK_KEY = 'visitor_analytics_last_route_track';
 
-const AUTO_SYNC_INTERVAL_MS = 15_000;
+const AUTO_SYNC_INTERVAL_MS = 15000;
+const ROUTE_TRACK_DEDUPE_MS = 1500;
 
 /* -------------------------------------------------------------------------- */
-/*                            BROWSER IDENTIFIERS                             */
+/*                          CLIENT / BROWSER HELPERS                          */
 /* -------------------------------------------------------------------------- */
 
 export function generateVisitorClientId(): string {
@@ -157,14 +175,87 @@ export function classifyReferrer(referrer?: string | null): VisitorReferrerType 
 }
 
 export function getPageType(pathname: string): VisitorPageType {
-  if (pathname === '/' || pathname === '/home') return 'landing';
-  if (pathname.startsWith('/category/')) return 'category';
-  if (pathname.startsWith('/article/')) return 'article';
+  const normalizedPath = pathname.toLowerCase();
+
+  if (normalizedPath === '/' || normalizedPath === '/home') return 'landing';
+  if (normalizedPath.startsWith('/category/') || normalizedPath.startsWith('/categories/')) {
+    return 'category';
+  }
+  if (normalizedPath.startsWith('/article/') || normalizedPath.startsWith('/articles/')) {
+    return 'article';
+  }
+
   return 'other';
 }
 
+function inferRouteMetadata(pathname: string): {
+  pageType: VisitorPageType;
+  categorySlug?: string;
+  articleId?: string;
+} {
+  const segments = pathname.split('/').filter(Boolean);
+  const pageType = getPageType(pathname);
+
+  if ((segments[0] === 'category' || segments[0] === 'categories') && segments[1]) {
+    return {
+      pageType,
+      categorySlug: decodeURIComponent(segments[1]),
+    };
+  }
+
+  if ((segments[0] === 'article' || segments[0] === 'articles') && segments[1]) {
+    return {
+      pageType,
+      articleId: decodeURIComponent(segments[1]),
+    };
+  }
+
+  return { pageType };
+}
+
+function getCurrentPagePath(): string {
+  if (typeof window === 'undefined') return '/';
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+export function shouldTrackRouteVisit(
+  routeKey: string,
+  cooldownMs = ROUTE_TRACK_DEDUPE_MS
+): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const now = Date.now();
+
+  try {
+    const raw = window.sessionStorage.getItem(LAST_ROUTE_TRACK_KEY);
+    if (raw) {
+      const previous = JSON.parse(raw) as { routeKey?: string; trackedAt?: number };
+
+      if (
+        previous.routeKey === routeKey &&
+        typeof previous.trackedAt === 'number' &&
+        now - previous.trackedAt < cooldownMs
+      ) {
+        return false;
+      }
+    }
+  } catch {
+    // ignore malformed storage
+  }
+
+  window.sessionStorage.setItem(
+    LAST_ROUTE_TRACK_KEY,
+    JSON.stringify({
+      routeKey,
+      trackedAt: now,
+    })
+  );
+
+  return true;
+}
+
 /* -------------------------------------------------------------------------- */
-/*                            PENDING QUEUE HELPERS                           */
+/*                              QUEUE HELPERS                                 */
 /* -------------------------------------------------------------------------- */
 
 export function getPendingVisitorEvents(): PendingVisitorEvent[] {
@@ -233,9 +324,32 @@ export function markCurrentSessionTracked(): void {
   window.sessionStorage.setItem(SESSION_TRACKED_KEY, 'true');
 }
 
+export function persistLastTrackedPayload(payload: TrackVisitorRequest): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(LAST_TRACKED_PAYLOAD_KEY, JSON.stringify(payload));
+}
+
+export function getLastTrackedPayload(): TrackVisitorRequest | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.sessionStorage.getItem(LAST_TRACKED_PAYLOAD_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TrackVisitorRequest;
+  } catch {
+    return null;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
-/*                               API CALLS                                    */
+/*                                 API LAYER                                  */
 /* -------------------------------------------------------------------------- */
+
+function buildVisitorTrackingEndpoint(): string {
+  return axiosInstance.getUri({
+    url: '/analytics/visitors/track',
+  });
+}
 
 export async function trackVisitorApi(payload: TrackVisitorRequest): Promise<TrackVisitorResponse> {
   const response = await axiosInstance.post<TrackVisitorResponse>('/analytics/visitors/track', payload, {
@@ -243,6 +357,7 @@ export async function trackVisitorApi(payload: TrackVisitorRequest): Promise<Tra
       'Content-Type': 'application/json',
     },
   });
+
   return response.data;
 }
 
@@ -267,7 +382,22 @@ export async function getRealtimeVisitorsApi(): Promise<RealtimeVisitors> {
   return normalizeRealtimeVisitors(response.data.data);
 }
 
-export async function exportVisitorDataApi(days: VisitorAnalyticsTimeRange | number): Promise<VisitorExportData> {
+export async function getRecentVisitorEventsApi(limit = 20): Promise<VisitorLog[]> {
+  const response = await axiosInstance.get<VisitorRecentEventsResponse>('/analytics/visitors/recent', {
+    params: {
+      limit,
+      _t: Date.now(),
+    },
+  });
+
+  return Array.isArray(response.data.data)
+    ? response.data.data.map(toVisitorLogModel)
+    : [];
+}
+
+export async function exportVisitorDataApi(
+  days: VisitorAnalyticsTimeRange | number
+): Promise<VisitorExportData> {
   const response = await axiosInstance.get<VisitorExportResponse>('/analytics/visitors/export', {
     params: {
       days,
@@ -282,6 +412,7 @@ export async function cleanupVisitorDataApi(days = 30): Promise<VisitorCleanupRe
   const response = await axiosInstance.delete<VisitorCleanupResponse>('/admin/analytics/visitors/cleanup', {
     data: { days },
   });
+
   return response.data;
 }
 
@@ -296,6 +427,7 @@ function incrementTopPages(
 ): VisitorStats['topPages'] {
   const map = new Map(items.map((item) => [item.page, item.views]));
   map.set(page, (map.get(page) ?? 0) + 1);
+
   return Array.from(map.entries())
     .map(([entryPage, views]) => ({ page: entryPage, views }))
     .sort((a, b) => b.views - a.views)
@@ -311,6 +443,7 @@ function incrementTopCategories(
 
   const map = new Map(items.map((item) => [item.category, item.views]));
   map.set(categorySlug, (map.get(categorySlug) ?? 0) + 1);
+
   return Array.from(map.entries())
     .map(([category, views]) => ({ category, views }))
     .sort((a, b) => b.views - a.views)
@@ -327,6 +460,7 @@ function incrementTopArticles(
   const normalizedArticleId = String(articleId);
   const map = new Map(items.map((item) => [item.articleId, item.views]));
   map.set(normalizedArticleId, (map.get(normalizedArticleId) ?? 0) + 1);
+
   return Array.from(map.entries())
     .map(([entryArticleId, views]) => ({ articleId: entryArticleId, views }))
     .sort((a, b) => b.views - a.views)
@@ -382,7 +516,7 @@ function applyOptimisticRealtimeUpdate(
   return {
     totalToday: base.totalToday + 1,
     uniqueToday: base.uniqueToday + (shouldIncrementUnique ? 1 : 0),
-    activeNow: base.activeNow + 1,
+    activeNow: Math.max(base.activeNow, 1),
   };
 }
 
@@ -392,19 +526,24 @@ function updateSyncStatusCache(queryClient: QueryClient): void {
 
 export async function invalidateVisitorAnalytics(queryClient: QueryClient): Promise<void> {
   updateSyncStatusCache(queryClient);
+
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: visitorAnalyticsKeys.stats.all() }),
     queryClient.invalidateQueries({ queryKey: visitorAnalyticsKeys.realtime.all() }),
     queryClient.invalidateQueries({ queryKey: visitorAnalyticsKeys.sync.status() }),
+    queryClient.invalidateQueries({ queryKey: visitorAnalyticsKeys.recent.all() }),
   ]);
 }
 
 /* -------------------------------------------------------------------------- */
-/*                          PENDING QUEUE SYNCHRONIZER                        */
+/*                             AUTO QUEUE FLUSHING                            */
 /* -------------------------------------------------------------------------- */
 
 export async function flushPendingVisitorEvents(queryClient?: QueryClient): Promise<void> {
-  if (typeof window === 'undefined' || !window.navigator.onLine) return;
+  if (typeof window === 'undefined' || !window.navigator.onLine) {
+    if (queryClient) updateSyncStatusCache(queryClient);
+    return;
+  }
 
   const pendingEvents = getPendingVisitorEvents();
   if (pendingEvents.length === 0) {
@@ -420,6 +559,7 @@ export async function flushPendingVisitorEvents(queryClient?: QueryClient): Prom
       void clientId;
       void queuedAt;
       void retries;
+
       await trackVisitorApi(payload);
     } catch {
       failedEvents.push({
@@ -441,15 +581,21 @@ export async function flushPendingVisitorEvents(queryClient?: QueryClient): Prom
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                             PAYLOAD GENERATION                             */
+/* -------------------------------------------------------------------------- */
+
 export function buildTrackVisitorPayload(options?: TrackVisitorOptions): TrackVisitorRequest {
-  const pathname = options?.page ?? (typeof window !== 'undefined' ? window.location.pathname : '/');
+  const rawPage = options?.page ?? getCurrentPagePath();
+  const pathname = rawPage.split('?')[0].split('#')[0] || '/';
   const referrer = typeof document !== 'undefined' ? document.referrer || null : null;
+  const inferred = inferRouteMetadata(pathname);
 
   return {
     sessionId: getVisitorSessionId(),
     uniqueVisitorId: getUniqueVisitorId(),
-    page: pathname,
-    pageType: getPageType(pathname),
+    page: rawPage,
+    pageType: inferred.pageType,
     referrer,
     referrerType: classifyReferrer(referrer),
     userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
@@ -464,19 +610,26 @@ export function buildTrackVisitorPayload(options?: TrackVisitorOptions): TrackVi
           ? Intl.DateTimeFormat().resolvedOptions().timeZone
           : 'UTC',
     },
-    categorySlug: options?.categorySlug,
-    articleId: options?.articleId,
-    additionalData: options?.additionalData,
+    categorySlug: options?.categorySlug ?? inferred.categorySlug ?? null,
+    articleId: options?.articleId ?? inferred.articleId ?? null,
+    additionalData: {
+      ...(options?.additionalData ?? {}),
+      title: typeof document !== 'undefined' ? document.title : undefined,
+      href: typeof window !== 'undefined' ? window.location.href : undefined,
+    },
   };
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                HOOKS                                       */
+/*                                   HOOKS                                    */
 /* -------------------------------------------------------------------------- */
 
 export const useVisitorStats = (
   days: VisitorAnalyticsTimeRange | number,
-  options?: Omit<UseQueryOptions<VisitorStats, AxiosError<VisitorStatsResponse>>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<VisitorStats, AxiosError<VisitorStatsResponse>>,
+    'queryKey' | 'queryFn'
+  >
 ) => {
   return useQuery<VisitorStats, AxiosError<VisitorStatsResponse>>({
     queryKey: visitorAnalyticsKeys.stats.detail(days),
@@ -486,7 +639,7 @@ export const useVisitorStats = (
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: 30_000,
+    refetchInterval: 30000,
     retry: 1,
     placeholderData: emptyVisitorStats(),
     ...options,
@@ -494,7 +647,10 @@ export const useVisitorStats = (
 };
 
 export const useRealtimeVisitors = (
-  options?: Omit<UseQueryOptions<RealtimeVisitors, AxiosError<RealtimeVisitorsResponse>>, 'queryKey' | 'queryFn'>
+  options?: Omit<
+    UseQueryOptions<RealtimeVisitors, AxiosError<RealtimeVisitorsResponse>>,
+    'queryKey' | 'queryFn'
+  >
 ) => {
   return useQuery<RealtimeVisitors, AxiosError<RealtimeVisitorsResponse>>({
     queryKey: visitorAnalyticsKeys.realtime.all(),
@@ -504,9 +660,31 @@ export const useRealtimeVisitors = (
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: 15_000,
+    refetchInterval: 15000,
     retry: 1,
     placeholderData: emptyRealtimeVisitors(),
+    ...options,
+  });
+};
+
+export const useVisitorRecentEvents = (
+  limit = 20,
+  options?: Omit<
+    UseQueryOptions<VisitorLog[], AxiosError<VisitorRecentEventsResponse>>,
+    'queryKey' | 'queryFn'
+  >
+) => {
+  return useQuery<VisitorLog[], AxiosError<VisitorRecentEventsResponse>>({
+    queryKey: visitorAnalyticsKeys.recent.detail(limit),
+    queryFn: () => getRecentVisitorEventsApi(limit),
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 10000,
+    retry: 1,
+    placeholderData: [],
     ...options,
   });
 };
@@ -520,7 +698,7 @@ export const useVisitorSyncStatus = () => {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: 5_000,
+    refetchInterval: 5000,
     initialData: getVisitorSyncStatus(),
   });
 };
@@ -544,10 +722,12 @@ export const useTrackVisitor = (
       await Promise.all([
         queryClient.cancelQueries({ queryKey: visitorAnalyticsKeys.stats.all() }),
         queryClient.cancelQueries({ queryKey: visitorAnalyticsKeys.realtime.all() }),
+        queryClient.cancelQueries({ queryKey: visitorAnalyticsKeys.recent.all() }),
       ]);
 
       const pendingEvent = createPendingVisitorEvent(payload);
       addPendingVisitorEvent(pendingEvent);
+      persistLastTrackedPayload(payload);
 
       const existingStats = queryClient.getQueriesData<VisitorStats>({
         queryKey: visitorAnalyticsKeys.stats.all(),
@@ -566,8 +746,9 @@ export const useTrackVisitor = (
 
       return { pendingEvent };
     },
-    onSuccess: (data, _payload, context) => {
+    onSuccess: (data, payload, context) => {
       removePendingVisitorEvent(context.pendingEvent.clientId);
+      persistLastTrackedPayload(payload);
       markVisitorSyncTime();
       markCurrentSessionTracked();
       updateSyncStatusCache(queryClient);
@@ -582,9 +763,11 @@ export const useTrackVisitor = (
             ? { ...item, retries: item.retries + 1 }
             : item
         );
+
         setPendingVisitorEvents(updated);
         updateSyncStatusCache(queryClient);
       }
+
       callbacks?.onError?.(error);
     },
     onSettled: async () => {
@@ -611,10 +794,12 @@ export const useTrackCurrentVisitor = (
       ...trackVisitorMutation,
       trackCurrentVisitor: (options?: TrackVisitorOptions) => {
         const payload = buildTrackVisitorPayload(options);
+        persistLastTrackedPayload(payload);
         trackVisitorMutation.mutate(payload);
       },
       trackCurrentVisitorAsync: async (options?: TrackVisitorOptions) => {
         const payload = buildTrackVisitorPayload(options);
+        persistLastTrackedPayload(payload);
         return trackVisitorMutation.mutateAsync(payload);
       },
     }),
@@ -628,7 +813,11 @@ export const useExportVisitorData = (
     onError?: (error: AxiosError<VisitorExportResponse>) => void;
   }
 ) => {
-  return useMutation<VisitorExportData, AxiosError<VisitorExportResponse>, VisitorAnalyticsTimeRange | number>({
+  return useMutation<
+    VisitorExportData,
+    AxiosError<VisitorExportResponse>,
+    VisitorAnalyticsTimeRange | number
+  >({
     mutationFn: (days) => exportVisitorDataApi(days),
     onSuccess: (data) => {
       callbacks?.onSuccess?.(data);
@@ -655,27 +844,6 @@ export const useCleanupVisitorData = (
     },
     onError: (error) => {
       callbacks?.onError?.(error);
-    },
-  });
-};
-
-export const useForceSyncVisitorEvents = (
-  callbacks?: {
-    onSuccess?: () => void;
-    onError?: (message: string) => void;
-  }
-) => {
-  const queryClient = useQueryClient();
-
-  return useMutation<void, Error, void>({
-    mutationFn: async () => {
-      await flushPendingVisitorEvents(queryClient);
-    },
-    onSuccess: () => {
-      callbacks?.onSuccess?.();
-    },
-    onError: (error) => {
-      callbacks?.onError?.(formatVisitorAnalyticsError(error, 'Failed to sync pending visitor events.'));
     },
   });
 };
@@ -731,7 +899,7 @@ export const useInitializeVisitorAnalyticsSync = (): void => {
         type: 'application/json',
       });
 
-      navigator.sendBeacon('/api/analytics/visitors/track', blob);
+      navigator.sendBeacon(buildVisitorTrackingEndpoint(), blob);
     };
 
     window.addEventListener('online', handleOnline);
@@ -748,7 +916,7 @@ export const useInitializeVisitorAnalyticsSync = (): void => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                              FILE EXPORTER                                 */
+/*                               FILE EXPORTER                                */
 /* -------------------------------------------------------------------------- */
 
 export function downloadVisitorExport(data: VisitorExportData, fileName?: string): void {
@@ -771,19 +939,19 @@ export function downloadVisitorExport(data: VisitorExportData, fileName?: string
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            EXPORT ALL HOOKS                                */
+/*                                 EXPORT ALL                                 */
 /* -------------------------------------------------------------------------- */
 
 export default {
   visitorAnalyticsKeys,
   useVisitorStats,
   useRealtimeVisitors,
+  useVisitorRecentEvents,
   useVisitorSyncStatus,
   useTrackVisitor,
   useTrackCurrentVisitor,
   useExportVisitorData,
   useCleanupVisitorData,
-  useForceSyncVisitorEvents,
   useRefreshVisitorAnalytics,
   useInitializeVisitorAnalyticsSync,
   buildTrackVisitorPayload,
@@ -799,4 +967,6 @@ export default {
   getPageType,
   classifyReferrer,
   getDeviceType,
+  getLastTrackedPayload,
+  shouldTrackRouteVisit,
 };

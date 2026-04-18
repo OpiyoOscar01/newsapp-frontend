@@ -3,17 +3,7 @@
  * ============================================================================
  * VISITOR ANALYTICS TYPE DEFINITIONS
  * ============================================================================
- *
- * This file contains all TypeScript type declarations and normalizers for
- * visitor tracking, analytics statistics, realtime analytics, exports,
- * sync state, and optimistic queue handling.
- *
- * @module visitorAnalyticsTypes
  */
-
-/* -------------------------------------------------------------------------- */
-/*                               CORE CONSTANTS                               */
-/* -------------------------------------------------------------------------- */
 
 export const VisitorPageTypes = {
   LANDING: 'landing',
@@ -48,10 +38,6 @@ export type VisitorDeviceType = typeof VisitorDeviceTypes[keyof typeof VisitorDe
 export type VisitorAnalyticsTimeRange =
   typeof VisitorAnalyticsTimeRanges[keyof typeof VisitorAnalyticsTimeRanges];
 
-/* -------------------------------------------------------------------------- */
-/*                              REQUEST PAYLOADS                              */
-/* -------------------------------------------------------------------------- */
-
 export interface VisitorLocation {
   country?: string;
   city?: string;
@@ -81,12 +67,8 @@ export interface TrackVisitorOptions {
   additionalData?: Record<string, unknown>;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               API ENTITIES                                 */
-/* -------------------------------------------------------------------------- */
-
 export interface ApiVisitorLog {
-  id: number;
+  id: string | number;
   session_id: string;
   unique_visitor_id?: string | null;
   page: string;
@@ -104,7 +86,7 @@ export interface ApiVisitorLog {
   ip_address?: string | null;
   additional_data?: Record<string, unknown> | null;
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | null;
 }
 
 export interface VisitorLog {
@@ -202,10 +184,6 @@ export interface VisitorSyncStatus {
   isOnline: boolean;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                              API RESPONSES                                 */
-/* -------------------------------------------------------------------------- */
-
 export interface TrackVisitorResponse {
   success: boolean;
   message: string;
@@ -249,9 +227,18 @@ export interface VisitorCleanupResponse {
   };
 }
 
-/* -------------------------------------------------------------------------- */
-/*                               EMPTY STATES                                 */
-/* -------------------------------------------------------------------------- */
+export interface VisitorRecentEventsResponse {
+  success: boolean;
+  data: ApiVisitorLog[];
+}
+
+export const createEmptyHourlyVisits = (): Record<number, number> => {
+  const hourly: Record<number, number> = {};
+  for (let hour = 0; hour < 24; hour += 1) {
+    hourly[hour] = 0;
+  }
+  return hourly;
+};
 
 export const emptyVisitorStats = (): VisitorStats => ({
   totalVisits: 0,
@@ -287,21 +274,9 @@ export const emptyRealtimeVisitors = (): RealtimeVisitors => ({
   activeNow: 0,
 });
 
-export function createEmptyHourlyVisits(): Record<number, number> {
-  const hourly: Record<number, number> = {};
-  for (let hour = 0; hour < 24; hour += 1) {
-    hourly[hour] = 0;
-  }
-  return hourly;
-}
-
-/* -------------------------------------------------------------------------- */
-/*                              NORMALIZERS                                   */
-/* -------------------------------------------------------------------------- */
-
 export function toVisitorLogModel(apiLog: ApiVisitorLog): VisitorLog {
   return {
-    id: apiLog.id.toString(),
+    id: String(apiLog.id),
     sessionId: apiLog.session_id,
     uniqueVisitorId: apiLog.unique_visitor_id ?? undefined,
     page: apiLog.page,
@@ -349,9 +324,9 @@ export function normalizeVisitorStats(stats?: Partial<VisitorStats> | null): Vis
       tablet: Number(stats?.deviceStats?.tablet ?? empty.deviceStats.tablet),
       desktop: Number(stats?.deviceStats?.desktop ?? empty.deviceStats.desktop),
     },
-    topPages: Array.isArray(stats?.topPages) ? stats!.topPages : [],
-    topCategories: Array.isArray(stats?.topCategories) ? stats!.topCategories : [],
-    topArticles: Array.isArray(stats?.topArticles) ? stats!.topArticles : [],
+    topPages: Array.isArray(stats?.topPages) ? stats.topPages : [],
+    topCategories: Array.isArray(stats?.topCategories) ? stats.topCategories : [],
+    topArticles: Array.isArray(stats?.topArticles) ? stats.topArticles : [],
     visitsByHour: {
       ...createEmptyHourlyVisits(),
       ...(stats?.visitsByHour ?? {}),
@@ -377,10 +352,6 @@ export function normalizeVisitorExport(response: VisitorExportResponse['data']):
     totalRecords: Number(response.total_records ?? 0),
   };
 }
-
-/* -------------------------------------------------------------------------- */
-/*                           CLIENT-SIDE HELPERS                              */
-/* -------------------------------------------------------------------------- */
 
 export function createPendingVisitorEvent(
   payload: TrackVisitorRequest,
@@ -411,10 +382,6 @@ export function formatVisitorAnalyticsError(
 
   return fallbackMessage;
 }
-
-/* -------------------------------------------------------------------------- */
-/*                           EXPORT ALL TYPES                                 */
-/* -------------------------------------------------------------------------- */
 
 export default {
   VisitorPageTypes,
