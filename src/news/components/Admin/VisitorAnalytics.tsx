@@ -3,10 +3,6 @@
  * ============================================================================
  * VISITOR ANALYTICS DASHBOARD COMPONENT
  * ============================================================================
- *
- * This component consumes the visitor analytics React Query hooks directly,
- * keeps data fresh with no frontend caching, relies on automatic background
- * syncing, and renders charts using Recharts.
  */
 
 import React, { useMemo, useState } from 'react';
@@ -43,6 +39,34 @@ import type {
   VisitorAnalyticsTimeRange,
   VisitorStats,
 } from '../../api/visitor-analytics/VisitorAnalyticsTypes';
+import {
+  TrendingUp,
+  Users,
+  FileText,
+  FolderOpen,
+  RefreshCw,
+  Download,
+  Trash2,
+  AlertCircle,
+  Wifi,
+  WifiOff,
+  Clock,
+  Eye,
+  MousePointerClick,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Globe,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Activity,
+  Zap,
+  Calendar,
+  Award,
+  Star,
+  ChevronRight,
+  Loader2,
+} from 'lucide-react';
 
 const PAGE_VIEW_COLORS = ['#2563eb', '#16a34a', '#9333ea', '#f97316'];
 const REFERRER_COLORS = ['#2563eb', '#0ea5e9', '#8b5cf6', '#f97316', '#64748b'];
@@ -55,12 +79,16 @@ const StatCard: React.FC<{
   value: number;
   accentClass: string;
   subtitle?: string;
-}> = ({ title, value, accentClass, subtitle }) => {
+  icon?: React.ReactNode;
+}> = ({ title, value, accentClass, subtitle, icon }) => {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            {icon && <div className="text-gray-400">{icon}</div>}
+            <p className="text-sm font-medium text-gray-500">{title}</p>
+          </div>
           <p className="mt-2 text-3xl font-bold text-gray-900">{formatNumber(value)}</p>
           {subtitle ? <p className="mt-2 text-xs text-gray-500">{subtitle}</p> : null}
         </div>
@@ -74,11 +102,15 @@ const SectionCard: React.FC<{
   title: string;
   description?: string;
   children: React.ReactNode;
-}> = ({ title, description, children }) => {
+  icon?: React.ReactNode;
+}> = ({ title, description, children, icon }) => {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="mb-5">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center gap-2">
+          {icon && <div className="text-gray-500">{icon}</div>}
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        </div>
         {description ? <p className="mt-1 text-sm text-gray-500">{description}</p> : null}
       </div>
       {children}
@@ -88,7 +120,10 @@ const SectionCard: React.FC<{
 
 const EmptyState: React.FC<{ message: string }> = ({ message }) => (
   <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
-    {message}
+    <div className="text-center">
+      <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+      <p>{message}</p>
+    </div>
   </div>
 );
 
@@ -217,19 +252,21 @@ const VisitorAnalytics: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-10">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center cursor-pointer">
+        <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
         <p className="text-sm font-medium text-red-700">{pageLoadError}</p>
         <button
           onClick={handleRefresh}
-          className="mt-4 inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors cursor-pointer"
         >
+          <RefreshCw className="h-4 w-4" />
           Retry
         </button>
       </div>
@@ -247,23 +284,27 @@ const VisitorAnalytics: React.FC = () => {
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">DefinePress Visitor Analytics</h2>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-gray-700" />
+              <h2 className="text-2xl font-bold text-gray-900">DefinePress Visitor Analytics</h2>
+            </div>
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
-                Active now: {formatNumber(realtime.activeNow)}
-              </span>
-              <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
+              <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700 flex items-center gap-1 cursor-default">
+                <Eye className="h-3 w-3" />
                 Total today: {formatNumber(realtime.totalToday)}
               </span>
-              <span className="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-700">
+              <span className="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-700 flex items-center gap-1 cursor-default">
+                <Users className="h-3 w-3" />
                 Unique today: {formatNumber(realtime.uniqueToday)}
               </span>
               {(syncStatus?.pendingCount ?? 0) > 0 ? (
-                <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700">
+                <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700 flex items-center gap-1 cursor-default">
+                  <Clock className="h-3 w-3" />
                   Pending auto-sync: {formatNumber(syncStatus?.pendingCount ?? 0)}
                 </span>
               ) : (
-                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600 flex items-center gap-1 cursor-default">
+                  <Zap className="h-3 w-3" />
                   Sync queue empty
                 </span>
               )}
@@ -276,7 +317,7 @@ const VisitorAnalytics: React.FC = () => {
               onChange={(event) =>
                 setTimeRange(Number(event.target.value) as VisitorAnalyticsTimeRange)
               }
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
               disabled={isBusy}
             >
               {TIME_RANGE_OPTIONS.map((option) => (
@@ -289,79 +330,129 @@ const VisitorAnalytics: React.FC = () => {
             <button
               onClick={handleRefresh}
               disabled={isBusy}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
-              {isFetching ? 'Refreshing...' : 'Refresh'}
+              {isFetching ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </>
+              )}
             </button>
 
             <button
               onClick={handleExport}
               disabled={exportMutation.isPending}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
-              {exportMutation.isPending ? 'Exporting...' : 'Export data'}
+              {exportMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Export data
+                </>
+              )}
             </button>
 
             <button
               onClick={handleCleanup}
               disabled={cleanupMutation.isPending}
-              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
-              {cleanupMutation.isPending ? 'Cleaning...' : 'Cleanup old data'}
+              {cleanupMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cleaning...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Cleanup old data
+                </>
+              )}
             </button>
           </div>
         </div>
 
         {isZeroState ? (
-          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            No persisted visitor activity is showing yet. Browse the app in another tab or use the
-            debug panel to trigger a manual test event and verify the tracking pipeline.
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-center gap-2 cursor-pointer">
+            <AlertCircle className="h-4 w-4" />
+            <p>No persisted visitor activity is showing yet. Browse the app in another tab or use the debug panel to trigger a manual test event and verify the tracking pipeline.</p>
           </div>
         ) : null}
 
         {(feedbackMessage || syncStatus?.lastSyncTime || isRealtimeFetching) && (
           <div className="mt-4 space-y-2">
             {feedbackMessage ? (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 flex items-center gap-2 cursor-pointer">
+                <AlertCircle className="h-4 w-4" />
                 {feedbackMessage}
               </div>
             ) : null}
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-              <span>Network: {syncStatus?.isOnline ? 'Online' : 'Offline'}</span>
-              <span>
-                Last sync:{' '}
-                {syncStatus?.lastSyncTime
+              <span className="flex items-center gap-1">
+                {syncStatus?.isOnline ? (
+                  <Wifi className="h-3 w-3 text-green-600" />
+                ) : (
+                  <WifiOff className="h-3 w-3 text-red-600" />
+                )}
+                Network: {syncStatus?.isOnline ? 'Online' : 'Offline'}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Last sync: {syncStatus?.lastSyncTime
                   ? syncStatus.lastSyncTime.toLocaleString()
                   : 'Never'}
               </span>
-              <span>
+              <span className="flex items-center gap-1">
+                <Activity className="h-3 w-3" />
                 {isRealtimeFetching
                   ? 'Realtime metrics updating…'
                   : 'Realtime metrics up to date'}
               </span>
-              <span>Sync mode: automatic</span>
+              <span className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                Sync mode: automatic
+              </span>
             </div>
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Visits" value={stats.totalVisits} accentClass="bg-blue-500" />
+        <StatCard 
+          title="Total Visits" 
+          value={stats.totalVisits} 
+          accentClass="bg-blue-500"
+          icon={<Eye className="h-4 w-4" />}
+        />
         <StatCard
           title="Unique Visitors"
           value={stats.uniqueVisitors}
           accentClass="bg-emerald-500"
+          icon={<Users className="h-4 w-4" />}
         />
         <StatCard
           title="Article Views"
           value={stats.pageViews.article}
           accentClass="bg-violet-500"
+          icon={<FileText className="h-4 w-4" />}
         />
         <StatCard
           title="Category Views"
           value={stats.pageViews.category}
           accentClass="bg-amber-500"
+          icon={<FolderOpen className="h-4 w-4" />}
         />
       </div>
 
@@ -369,6 +460,7 @@ const VisitorAnalytics: React.FC = () => {
         <SectionCard
           title="Visits by Day"
           description="Daily traffic trend for the selected reporting window."
+          icon={<Calendar className="h-5 w-5" />}
         >
           {visitsByDayChart.length > 0 ? (
             <div className="h-[320px]">
@@ -402,6 +494,7 @@ const VisitorAnalytics: React.FC = () => {
         <SectionCard
           title="Visits by Hour"
           description="Hourly distribution of page visits based on the selected range."
+          icon={<Clock className="h-5 w-5" />}
         >
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -421,6 +514,7 @@ const VisitorAnalytics: React.FC = () => {
         <SectionCard
           title="Page Views Breakdown"
           description="Distribution of page types across visits."
+          icon={<PieChartIcon className="h-5 w-5" />}
         >
           {pageViewsChart.some((item) => item.value > 0) ? (
             <div className="h-[320px]">
@@ -451,7 +545,11 @@ const VisitorAnalytics: React.FC = () => {
           )}
         </SectionCard>
 
-        <SectionCard title="Traffic Sources" description="Referrer mix for the selected period.">
+        <SectionCard 
+          title="Traffic Sources" 
+          description="Referrer mix for the selected period."
+          icon={<Globe className="h-5 w-5" />}
+        >
           {referrerChart.some((item) => item.value > 0) ? (
             <div className="space-y-4">
               <div className="h-[260px]">
@@ -481,7 +579,7 @@ const VisitorAnalytics: React.FC = () => {
                       : '0.0';
 
                   return (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
+                    <div key={item.name} className="flex items-center justify-between text-sm cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
                       <span className="text-gray-600">{item.name}</span>
                       <span className="font-medium text-gray-900">
                         {formatNumber(item.value)} ({percentage}%)
@@ -496,7 +594,11 @@ const VisitorAnalytics: React.FC = () => {
           )}
         </SectionCard>
 
-        <SectionCard title="Device Types" description="Device distribution for active visitors.">
+        <SectionCard 
+          title="Device Types" 
+          description="Device distribution for active visitors."
+          icon={<Smartphone className="h-5 w-5" />}
+        >
           {deviceChart.some((item) => item.value > 0) ? (
             <div className="space-y-4">
               <div className="h-[260px]">
@@ -524,8 +626,13 @@ const VisitorAnalytics: React.FC = () => {
                       : '0.0';
 
                   return (
-                    <div key={item.name} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{item.name}</span>
+                    <div key={item.name} className="flex items-center justify-between text-sm cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                      <div className="flex items-center gap-2">
+                        {item.name === 'Mobile' && <Smartphone className="h-4 w-4 text-gray-500" />}
+                        {item.name === 'Tablet' && <Tablet className="h-4 w-4 text-gray-500" />}
+                        {item.name === 'Desktop' && <Monitor className="h-4 w-4 text-gray-500" />}
+                        <span className="text-gray-600">{item.name}</span>
+                      </div>
                       <span className="font-medium text-gray-900">
                         {formatNumber(item.value)} ({percentage}%)
                       </span>
@@ -541,7 +648,11 @@ const VisitorAnalytics: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <SectionCard title="Top Pages" description="Most visited pages in the selected period.">
+        <SectionCard 
+          title="Top Pages" 
+          description="Most visited pages in the selected period."
+          icon={<Award className="h-5 w-5" />}
+        >
           {stats.topPages.length > 0 ? (
             <div className="overflow-hidden rounded-lg border border-gray-100">
               <div className="max-h-[320px] overflow-auto">
@@ -558,7 +669,7 @@ const VisitorAnalytics: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {stats.topPages.slice(0, 10).map((page) => (
-                      <tr key={page.page} className="hover:bg-gray-50">
+                      <tr key={page.page} className="hover:bg-gray-50 cursor-pointer transition-colors">
                         <td className="px-4 py-3 font-mono text-sm text-gray-700">{page.page}</td>
                         <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
                           {formatNumber(page.views)}
@@ -574,20 +685,30 @@ const VisitorAnalytics: React.FC = () => {
           )}
         </SectionCard>
 
-        <SectionCard title="Top Categories" description="Highest-performing category pages.">
+        <SectionCard 
+          title="Top Categories" 
+          description="Highest-performing category pages."
+          icon={<Star className="h-5 w-5" />}
+        >
           {stats.topCategories.length > 0 ? (
             <div className="space-y-3">
               {stats.topCategories.slice(0, 8).map((item) => (
                 <div
                   key={item.category}
-                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50"
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  <span className="truncate text-sm font-medium capitalize text-gray-700">
-                    {item.category}
-                  </span>
-                  <span className="ml-4 text-sm font-semibold text-gray-900">
-                    {formatNumber(item.views)} views
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <FolderOpen className="h-4 w-4 text-gray-400" />
+                    <span className="truncate text-sm font-medium capitalize text-gray-700">
+                      {item.category}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatNumber(item.views)} views
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -596,27 +717,37 @@ const VisitorAnalytics: React.FC = () => {
           )}
         </SectionCard>
 
-        <SectionCard title="Top Articles" description="Most viewed article entries.">
-          {stats.topArticles.length > 0 ? (
-            <div className="space-y-3">
-              {stats.topArticles.slice(0, 8).map((item) => (
-                <div
-                  key={item.articleId}
-                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50"
-                >
-                  <span className="truncate font-mono text-sm text-gray-700">
-                    {item.articleId}
-                  </span>
-                  <span className="ml-4 text-sm font-semibold text-gray-900">
-                    {formatNumber(item.views)} views
-                  </span>
+        <SectionCard 
+              title="Top Articles" 
+              description="Most viewed article entries."
+              icon={<TrendingUp className="h-5 w-5" />}
+            >
+              {stats.topArticles.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.topArticles.slice(0, 8).map((item) => (
+                    <div
+                      key={item.articleId}
+                      className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 break-words">
+                          {item.title || item.articleId}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                          {formatNumber(item.views)} views
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="No article performance data available yet." />
-          )}
-        </SectionCard>
+              ) : (
+                <EmptyState message="No article performance data available yet." />
+              )}
+            </SectionCard>
       </div>
     </div>
   );
