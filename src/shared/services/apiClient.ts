@@ -77,8 +77,7 @@ class ApiClient {
 
   private getAuthToken(): string | null {
     // Get token from Redux store first, fallback to localStorage
-    const state = store.getState();
-    return state.auth.token || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    return  localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   private handleUnauthorized(): void {

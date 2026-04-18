@@ -1,6 +1,6 @@
 // src/pages/ArticlePage.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
   AlertCircle,
   Bookmark,
@@ -27,7 +27,6 @@ import { selectRandomAd } from '../utils/randomAdSelector';
 import { formatFullDate, formatRelativeDate } from '../utils/formatDate';
 import { paginate } from '../utils/paginationHelpers';
 import { ROUTES } from '../routes/routes';
-import { saveRedirectPath } from '../api/auth/AuthQueries';
 
 import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
@@ -53,7 +52,6 @@ import type {
   UserInteractions,
 } from '../api/article-interraction/ArticleInteractionTypes';
 import type { Ad } from '../types';
-import type { Article as ApiArticle } from '../api/NewsTypes';
 
 import { useAppSelector } from '../../shared/hooks/useRedux';
 import {
@@ -76,18 +74,21 @@ type ArticleRecord = {
 };
 
 // Helper function to convert API Article to ArticleRecord
-const convertToArticleRecord = (apiArticle: ApiArticle): ArticleRecord => ({
-  id: Number(apiArticle.id), // Convert string to number
-  slug: apiArticle.slug,
-  title: apiArticle.title,
-  summary: apiArticle.summary,
-  content: apiArticle.content,
-  category: apiArticle.category,
+const convertToArticleRecord = (apiArticle: any): ArticleRecord => ({
+  id: typeof apiArticle.id === 'string' ? parseInt(apiArticle.id, 10) : apiArticle.id,
+  slug: apiArticle.slug || '',
+  title: apiArticle.title || '',
+  summary: apiArticle.summary || apiArticle.description || '',
+  content: apiArticle.content || '',
+  category: apiArticle.category || '',
   author: apiArticle.author || 'Unknown',
-  publishedAt: apiArticle.publishedAt,
+  publishedAt: apiArticle.published_at || apiArticle.publishedAt || new Date().toISOString(),
   readTime: apiArticle.readTime || Math.ceil((apiArticle.content?.length || 0) / 1000),
-  imageUrl: apiArticle.imageUrl,
-  tags: apiArticle.tags ? (Array.isArray(apiArticle.tags) ? apiArticle.tags : JSON.parse(apiArticle.tags)) : [],
+  imageUrl: apiArticle.image_url || apiArticle.imageUrl,
+  tags: apiArticle.tags ? (Array.isArray(apiArticle.tags) ? apiArticle.tags : 
+    (typeof apiArticle.tags === 'string' ? (() => {
+      try { return JSON.parse(apiArticle.tags); } catch { return []; }
+    })() : [])) : [],
 });
 
 const EMPTY_COUNTS: InteractionCounts = {
@@ -695,7 +696,6 @@ const ArticleInteractionsPanel: React.FC<ArticleInteractionsPanelProps> = ({
 /* -------------------------------------------------------------------------- */
 
 const ArticlePage: React.FC = () => {
-  const navigate = useNavigate();
   const { articleSlug } = useParams<{ articleSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -739,12 +739,6 @@ const ArticlePage: React.FC = () => {
     }
   }, [isAuthenticated, currentUser]);
 
-  // Handle redirect when user needs to login
-  const handleRequireAuth = () => {
-    // Save current path before redirecting to login
-    saveRedirectPath(window.location.pathname + window.location.search);
-    navigate(loginPath);
-  };
 
   // Load article
   useEffect(() => {

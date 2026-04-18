@@ -4,7 +4,8 @@ import { getArticlesByCategory, getCategories } from '../data/dataService';
 import { selectRandomAd } from '../utils/randomAdSelector';
 import { paginate } from '../utils/paginationHelpers';
 import { filterArticlesBySearch, sortArticles } from '../utils/filterArticles';
-import { type Ad, type Article } from '../types';
+import { type Ad} from '../types';
+import {type Article} from '../types/news';
 import { trackVisitor } from '../utils/visitorTracking';
 
 interface PaginatedData<T> {
