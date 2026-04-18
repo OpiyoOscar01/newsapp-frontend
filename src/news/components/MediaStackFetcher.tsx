@@ -33,10 +33,7 @@ const MediaStackFetcher: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<MediaStackCategory>('general');
 
   const { 
-    data: status = { isActive: false }, 
     isLoading: statusLoading, 
-    refetch: refetchStatus,
-    error: statusError,
   } = useMediaStackStatus();
 
   const testConnectionMutation = useTestMediaStackConnection();

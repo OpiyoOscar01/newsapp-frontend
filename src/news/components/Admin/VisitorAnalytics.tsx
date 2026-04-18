@@ -52,7 +52,6 @@ import {
   WifiOff,
   Clock,
   Eye,
-  MousePointerClick,
   Smartphone,
   Monitor,
   Tablet,
@@ -535,8 +534,8 @@ const VisitorAnalytics: React.FC = () => {
                       />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => value.toLocaleString()} />
-                  <Legend />
+              <Tooltip formatter={(value) => typeof value === 'number' ? value.toLocaleString() : value} />                 
+          <Legend />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -558,8 +557,8 @@ const VisitorAnalytics: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={70} />
-                    <Tooltip formatter={(value: number) => value.toLocaleString()} />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                    <Tooltip formatter={(value) => typeof value === 'number' ? value.toLocaleString() : value} />
+                      <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                       {referrerChart.map((entry, index) => (
                         <Cell
                           key={entry.name}
@@ -612,8 +611,8 @@ const VisitorAnalytics: React.FC = () => {
                         />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => value.toLocaleString()} />
-                    <Legend />
+                    <Tooltip formatter={(value) => typeof value === 'number' ? value.toLocaleString() : value} />
+                      <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -732,7 +731,7 @@ const VisitorAnalytics: React.FC = () => {
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
                         <span className="text-sm text-gray-700 break-words">
-                          {item.title || item.articleId}
+                          {item.articleId}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0 ml-4">
