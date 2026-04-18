@@ -1,116 +1,255 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  getVisitorStats, 
-  exportVisitorDataForBackend, 
-  clearOldVisitorData,
-  getSyncStatus,
-  forceSyncToBackend,
-  clearStatsCache,
-  type VisitorStats 
-} from '../../utils/visitorTracking';
+/**
+ * VisitorAnalytics.tsx
+ * ============================================================================
+ * VISITOR ANALYTICS DASHBOARD COMPONENT
+ * ============================================================================
+ *
+ * This component consumes the visitor analytics React Query hooks directly,
+ * keeps data fresh with no frontend caching, supports optimistic sync status,
+ * and renders charts using Recharts.
+ */
+
+import React, { useMemo, useState } from 'react';
+import {
+  ResponsiveContainer,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import {
+  downloadVisitorExport,
+  useCleanupVisitorData,
+  useExportVisitorData,
+  useForceSyncVisitorEvents,
+  useInitializeVisitorAnalyticsSync,
+  useRealtimeVisitors,
+  useRefreshVisitorAnalytics,
+  useVisitorStats,
+  useVisitorSyncStatus,
+} from '../../api/visitor-analytics/VisitorAnalyticsQueries';
+import type {
+  VisitorAnalyticsTimeRange,
+  VisitorStats,
+} from '../../api/visitor-analytics/VisitorAnalyticsTypes';
+import { VisitorAnalyticsTimeRanges } from '../../api/visitor-analytics/VisitorAnalyticsTypes';
+
+const PAGE_VIEW_COLORS = ['#2563eb', '#16a34a', '#9333ea', '#f97316'];
+const REFERRER_COLORS = ['#2563eb', '#0ea5e9', '#8b5cf6', '#f97316', '#64748b'];
+const DEVICE_COLORS = ['#16a34a', '#f59e0b', '#7c3aed'];
+
+const formatNumber = (value: number): string => value.toLocaleString();
+
+const StatCard: React.FC<{
+  title: string;
+  value: number;
+  accentClass: string;
+  subtitle?: string;
+}> = ({ title, value, accentClass, subtitle }) => {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="mt-2 text-3xl font-bold text-gray-900">{formatNumber(value)}</p>
+          {subtitle ? <p className="mt-2 text-xs text-gray-500">{subtitle}</p> : null}
+        </div>
+        <div className={`h-3 w-3 rounded-full ${accentClass}`} />
+      </div>
+    </div>
+  );
+};
+
+const SectionCard: React.FC<{
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}> = ({ title, description, children }) => {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+      <div className="mb-5">
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        {description ? <p className="mt-1 text-sm text-gray-500">{description}</p> : null}
+      </div>
+      {children}
+    </div>
+  );
+};
+
+const EmptyState: React.FC<{ message: string }> = ({ message }) => (
+  <div className="flex h-[280px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 text-sm text-gray-500">
+    {message}
+  </div>
+);
+
+const buildVisitsByHourChart = (stats: VisitorStats) => {
+  return Array.from({ length: 24 }, (_, hour) => ({
+    hour: `${hour}:00`,
+    visits: stats.visitsByHour[hour] ?? 0,
+  }));
+};
+
+const buildVisitsByDayChart = (stats: VisitorStats) => {
+  return Object.entries(stats.visitsByDay)
+    .sort(([dayA], [dayB]) => new Date(dayA).getTime() - new Date(dayB).getTime())
+    .map(([date, visits]) => ({
+      date,
+      visits,
+    }));
+};
+
+const buildPageViewsChart = (stats: VisitorStats) => [
+  { name: 'Landing', value: stats.pageViews.landing },
+  { name: 'Category', value: stats.pageViews.category },
+  { name: 'Article', value: stats.pageViews.article },
+  { name: 'Other', value: stats.pageViews.other },
+];
+
+const buildReferrerChart = (stats: VisitorStats) => [
+  { name: 'Direct', value: stats.referrerStats.direct },
+  { name: 'Search', value: stats.referrerStats.search },
+  { name: 'Social', value: stats.referrerStats.social },
+  { name: 'External', value: stats.referrerStats.external },
+  { name: 'Internal', value: stats.referrerStats.internal },
+];
+
+const buildDeviceChart = (stats: VisitorStats) => [
+  { name: 'Mobile', value: stats.deviceStats.mobile },
+  { name: 'Tablet', value: stats.deviceStats.tablet },
+  { name: 'Desktop', value: stats.deviceStats.desktop },
+];
+
+const TIME_RANGE_OPTIONS: Array<{ label: string; value: VisitorAnalyticsTimeRange }> = [
+  { label: 'Last 7 days', value: VisitorAnalyticsTimeRanges.SEVEN_DAYS },
+  { label: 'Last 30 days', value: VisitorAnalyticsTimeRanges.THIRTY_DAYS },
+  { label: 'Last 90 days', value: VisitorAnalyticsTimeRanges.NINETY_DAYS },
+];
 
 const VisitorAnalytics: React.FC = () => {
-  const [stats, setStats] = useState<VisitorStats | null>(null);
-  const [timeRange, setTimeRange] = useState<7 | 30 | 90>(7);
-  const [loading, setLoading] = useState(true);
-  const [syncStatus, setSyncStatus] = useState({ pendingCount: 0, lastSyncTime: null as Date | null });
-  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState<VisitorAnalyticsTimeRange>(VisitorAnalyticsTimeRanges.SEVEN_DAYS);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadStats();
-    updateSyncStatus();
-    
-    // Update sync status every 30 seconds
-    const interval = setInterval(updateSyncStatus, 30000);
-    return () => clearInterval(interval);
-  }, [timeRange]);
+  useInitializeVisitorAnalyticsSync();
 
-  const loadStats = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const visitorStats = await getVisitorStats(timeRange);
-      setStats(visitorStats);
-    } catch (error) {
-      console.error('Error loading visitor stats:', error);
-      setError('Failed to load visitor statistics. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const {
+    data: stats = {
+      totalVisits: 0,
+      uniqueVisitors: 0,
+      pageViews: { landing: 0, category: 0, article: 0, other: 0 },
+      referrerStats: { direct: 0, search: 0, social: 0, external: 0, internal: 0 },
+      deviceStats: { mobile: 0, tablet: 0, desktop: 0 },
+      topPages: [],
+      topCategories: [],
+      topArticles: [],
+      visitsByHour: {},
+      visitsByDay: {},
+    },
+    isLoading,
+    isFetching,
+    error,
+  } = useVisitorStats(timeRange);
+
+  const {
+    data: realtime = {
+      totalToday: 0,
+      uniqueToday: 0,
+      activeNow: 0,
+    },
+    isFetching: isRealtimeFetching,
+  } = useRealtimeVisitors();
+
+  const { data: syncStatus } = useVisitorSyncStatus();
+  const { refresh } = useRefreshVisitorAnalytics();
+
+  const exportMutation = useExportVisitorData({
+    onSuccess: (data) => {
+      downloadVisitorExport(data);
+      setFeedbackMessage('Visitor analytics export downloaded successfully.');
+    },
+    onError: () => {
+      setFeedbackMessage('Failed to export visitor analytics data.');
+    },
+  });
+
+  const forceSyncMutation = useForceSyncVisitorEvents({
+    onSuccess: () => {
+      setFeedbackMessage('Pending visitor events synced successfully.');
+    },
+    onError: (message) => {
+      setFeedbackMessage(message);
+    },
+  });
+
+  const cleanupMutation = useCleanupVisitorData({
+    onSuccess: (data) => {
+      setFeedbackMessage(data.message || 'Old visitor data cleanup completed successfully.');
+    },
+    onError: () => {
+      setFeedbackMessage('Failed to cleanup old visitor data.');
+    },
+  });
+
+  const visitsByHourChart = useMemo(() => buildVisitsByHourChart(stats), [stats]);
+  const visitsByDayChart = useMemo(() => buildVisitsByDayChart(stats), [stats]);
+  const pageViewsChart = useMemo(() => buildPageViewsChart(stats), [stats]);
+  const referrerChart = useMemo(() => buildReferrerChart(stats), [stats]);
+  const deviceChart = useMemo(() => buildDeviceChart(stats), [stats]);
+
+  const isBusy = isFetching || exportMutation.isPending || forceSyncMutation.isPending || cleanupMutation.isPending;
+  const pageLoadError = error instanceof Error ? error.message : 'Failed to load visitor analytics.';
+
+  const handleRefresh = async () => {
+    setFeedbackMessage(null);
+    await refresh();
   };
 
-  const updateSyncStatus = () => {
-    const status = getSyncStatus();
-    setSyncStatus(status);
-  };
-
-  const handleExportData = async () => {
-    try {
-      setLoading(true);
-      const exportData = await exportVisitorDataForBackend(timeRange);
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `visitor-data-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      alert('Data exported successfully');
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('Failed to export data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClearOldData = () => {
-    if (window.confirm('Clear visitor data older than 30 days? This will only affect local storage.')) {
-      clearOldVisitorData(30);
-      clearStatsCache();
-      loadStats();
-      alert('Old data cleared successfully');
-    }
+  const handleExport = async () => {
+    setFeedbackMessage(null);
+    await exportMutation.mutateAsync(timeRange);
   };
 
   const handleForceSync = async () => {
-    try {
-      setLoading(true);
-      await forceSyncToBackend();
-      updateSyncStatus();
-      clearStatsCache();
-      await loadStats();
-      alert('Sync completed successfully');
-    } catch (error) {
-      console.error('Sync failed:', error);
-      alert('Failed to sync data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    setFeedbackMessage(null);
+    await forceSyncMutation.mutateAsync();
   };
 
-  const handleRefresh = () => {
-    clearStatsCache();
-    loadStats();
+  const handleCleanup = async () => {
+    const confirmed = window.confirm(
+      'Delete visitor analytics data older than 30 days from the backend?'
+    );
+
+    if (!confirmed) return;
+
+    setFeedbackMessage(null);
+    await cleanupMutation.mutateAsync(30);
   };
 
-  if (loading && !stats) {
+  const totalReferrers = Object.values(stats.referrerStats).reduce((sum, count) => sum + count, 0);
+  const totalDevices = Object.values(stats.deviceStats).reduce((sum, count) => sum + count, 0);
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center p-10">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
       </div>
     );
   }
 
-  if (error && !stats) {
+  if (error) {
     return (
-      <div className="p-8 text-center">
-        <div className="text-red-600 mb-4">{error}</div>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <p className="text-sm font-medium text-red-700">{pageLoadError}</p>
         <button
-          onClick={loadStats}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          onClick={handleRefresh}
+          className="mt-4 inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
         >
           Retry
         </button>
@@ -118,321 +257,335 @@ const VisitorAnalytics: React.FC = () => {
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="p-8 text-center text-gray-500">
-        No visitor data available
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Visitor Analytics</h2>
-          <p className="text-gray-600">Track visitor behavior and site performance</p>
-          {syncStatus.pendingCount > 0 && (
-            <p className="text-sm text-orange-600 mt-1">
-              {syncStatus.pendingCount} events pending sync
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Visitor Analytics</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Real-time dashboard powered by React Query hooks, optimistic tracking, and Recharts.
             </p>
-          )}
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(Number(e.target.value) as 7 | 30 | 90)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-            disabled={loading}
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-          
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh data"
-          >
-            {loading ? '⟳' : '↻'} Refresh
-          </button>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+              <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+                Active now: {formatNumber(realtime.activeNow)}
+              </span>
+              <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
+                Total today: {formatNumber(realtime.totalToday)}
+              </span>
+              <span className="rounded-full bg-violet-50 px-3 py-1 font-medium text-violet-700">
+                Unique today: {formatNumber(realtime.uniqueToday)}
+              </span>
+              {syncStatus?.pendingCount ? (
+                <span className="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700">
+                  Pending sync: {formatNumber(syncStatus.pendingCount)}
+                </span>
+              ) : (
+                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                  Sync queue empty
+                </span>
+              )}
+            </div>
+          </div>
 
-          {syncStatus.pendingCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={timeRange}
+              onChange={(event) => setTimeRange(Number(event.target.value) as VisitorAnalyticsTimeRange)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              disabled={isBusy}
+            >
+              {TIME_RANGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleRefresh}
+              disabled={isBusy}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isFetching ? 'Refreshing...' : 'Refresh'}
+            </button>
+
             <button
               onClick={handleForceSync}
-              disabled={loading}
-              className="px-4 py-2 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 transition-colors disabled:opacity-50"
-              title={`Sync ${syncStatus.pendingCount} pending events`}
+              disabled={forceSyncMutation.isPending}
+              className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Sync Now
+              {forceSyncMutation.isPending ? 'Syncing...' : 'Sync now'}
             </button>
-          )}
-          
-          <button
-            onClick={handleExportData}
-            disabled={loading}
-            className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
-          >
-            Export Data
-          </button>
-          
-          <button
-            onClick={handleClearOldData}
-            disabled={loading}
-            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-          >
-            Clear Old
-          </button>
-        </div>
-      </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
+            <button
+              onClick={handleExport}
+              disabled={exportMutation.isPending}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exportMutation.isPending ? 'Exporting...' : 'Export data'}
+            </button>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Visits</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalVisits.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </div>
+            <button
+              onClick={handleCleanup}
+              disabled={cleanupMutation.isPending}
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {cleanupMutation.isPending ? 'Cleaning...' : 'Cleanup old data'}
+            </button>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Unique Visitors</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.uniqueVisitors.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Article Views</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.article.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Category Views</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pageViews.category.toLocaleString()}</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-full">
-              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Page Views Breakdown */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Page Views Breakdown</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">{stats.pageViews.landing.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Landing Page</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.pageViews.category.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Categories</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">{stats.pageViews.article.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Articles</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-gray-600">{stats.pageViews.other.toLocaleString()}</p>
-            <p className="text-sm text-gray-600">Other Pages</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Referrer Sources and Device Types */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Traffic Sources</h3>
-          <div className="space-y-3">
-            {Object.entries(stats.referrerStats).map(([source, count]) => {
-              const total = Object.values(stats.referrerStats).reduce((a, b) => a + b, 0);
-              const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-              
-              return (
-                <div key={source} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    <span className="capitalize text-gray-700 min-w-[80px]">{source}</span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[80px] text-right">
-                    {count.toLocaleString()} ({percentage}%)
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Device Types</h3>
-          <div className="space-y-3">
-            {Object.entries(stats.deviceStats).map(([device, count]) => {
-              const total = Object.values(stats.deviceStats).reduce((a, b) => a + b, 0);
-              const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
-              
-              return (
-                <div key={device} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 flex-1">
-                    <span className="capitalize text-gray-700 min-w-[80px]">{device}</span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          device === 'mobile' ? 'bg-green-600' :
-                          device === 'tablet' ? 'bg-orange-600' :
-                          'bg-purple-600'
-                        }`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900 ml-4 min-w-[80px] text-right">
-                    {count.toLocaleString()} ({percentage}%)
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Top Pages */}
-      {stats.topPages.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold mb-4">Top Pages</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Page
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Views
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {stats.topPages.slice(0, 10).map((page, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900 font-mono">
-                      {page.page}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 text-right font-semibold">
-                      {page.views.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Top Categories and Articles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {stats.topCategories.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4">Top Categories</h3>
-            <div className="space-y-2">
-              {stats.topCategories.slice(0, 5).map((cat, index) => (
-                <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <span className="text-gray-700 capitalize truncate">{cat.category}</span>
-                  <span className="text-sm font-semibold text-gray-900 ml-2">{cat.views.toLocaleString()} views</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {stats.topArticles.length > 0 && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold mb-4">Top Articles</h3>
-            <div className="space-y-2">
-              {stats.topArticles.slice(0, 5).map((art, index) => (
-                <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <span className="text-gray-700 font-mono text-sm truncate">{art.articleId}</span>
-                  <span className="text-sm font-semibold text-gray-900 ml-2">{art.views.toLocaleString()} views</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Hourly Distribution */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Visits by Hour (24h)</h3>
-        <div className="flex items-end justify-between space-x-1 h-32">
-          {Array.from({ length: 24 }, (_, i) => {
-            const count = stats.visitsByHour[i] || 0;
-            const maxCount = Math.max(...Object.values(stats.visitsByHour), 1);
-            const height = (count / maxCount) * 100;
-            
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center">
-                <div
-                  className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer"
-                  style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }}
-                  title={`${i}:00 - ${count} visits`}
-                />
-                <span className="text-xs text-gray-500 mt-1">{i}</span>
+        {(feedbackMessage || syncStatus?.lastSyncTime || isRealtimeFetching) && (
+          <div className="mt-4 space-y-2">
+            {feedbackMessage ? (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                {feedbackMessage}
               </div>
-            );
-          })}
-        </div>
+            ) : null}
+            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
+              <span>
+                Network: {syncStatus?.isOnline ? 'Online' : 'Offline'}
+              </span>
+              <span>
+                Last sync:{' '}
+                {syncStatus?.lastSyncTime ? syncStatus.lastSyncTime.toLocaleString() : 'Never'}
+              </span>
+              <span>{isRealtimeFetching ? 'Realtime metrics updating…' : 'Realtime metrics up to date'}</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Sync Status Footer */}
-      {syncStatus.lastSyncTime && (
-        <div className="text-center text-sm text-gray-500">
-          Last synced: {syncStatus.lastSyncTime.toLocaleString()}
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Total Visits" value={stats.totalVisits} accentClass="bg-blue-500" />
+        <StatCard title="Unique Visitors" value={stats.uniqueVisitors} accentClass="bg-emerald-500" />
+        <StatCard title="Article Views" value={stats.pageViews.article} accentClass="bg-violet-500" />
+        <StatCard title="Category Views" value={stats.pageViews.category} accentClass="bg-amber-500" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <SectionCard
+          title="Visits by Day"
+          description="Daily traffic trend for the selected reporting window."
+        >
+          {visitsByDayChart.length > 0 ? (
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={visitsByDayChart}>
+                  <defs>
+                    <linearGradient id="visitsByDayFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="visits"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fill="url(#visitsByDayFill)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="No daily visit data available for this period." />
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Visits by Hour"
+          description="Hourly distribution of page visits based on the selected range."
+        >
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={visitsByHourChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={1} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="visits" fill="#2563eb" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <SectionCard title="Page Views Breakdown" description="Distribution of page types across visits.">
+          {pageViewsChart.some((item) => item.value > 0) ? (
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pageViewsChart} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110} paddingAngle={4}>
+                    {pageViewsChart.map((entry, index) => (
+                      <Cell key={entry.name} fill={PAGE_VIEW_COLORS[index % PAGE_VIEW_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => value.toLocaleString()} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <EmptyState message="No page view data available yet." />
+          )}
+        </SectionCard>
+
+        <SectionCard title="Traffic Sources" description="Referrer mix for the selected period.">
+          {referrerChart.some((item) => item.value > 0) ? (
+            <div className="space-y-4">
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={referrerChart} layout="vertical" margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={70} />
+                    <Tooltip formatter={(value: number) => value.toLocaleString()} />
+                    <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                      {referrerChart.map((entry, index) => (
+                        <Cell key={entry.name} fill={REFERRER_COLORS[index % REFERRER_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2">
+                {referrerChart.map((item) => {
+                  const percentage = totalReferrers > 0 ? ((item.value / totalReferrers) * 100).toFixed(1) : '0.0';
+                  return (
+                    <div key={item.name} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">{item.name}</span>
+                      <span className="font-medium text-gray-900">
+                        {formatNumber(item.value)} ({percentage}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="No traffic source data available yet." />
+          )}
+        </SectionCard>
+
+        <SectionCard title="Device Types" description="Device distribution for active visitors.">
+          {deviceChart.some((item) => item.value > 0) ? (
+            <div className="space-y-4">
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={deviceChart} dataKey="value" nameKey="name" outerRadius={100}>
+                      {deviceChart.map((entry, index) => (
+                        <Cell key={entry.name} fill={DEVICE_COLORS[index % DEVICE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => value.toLocaleString()} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-2">
+                {deviceChart.map((item) => {
+                  const percentage = totalDevices > 0 ? ((item.value / totalDevices) * 100).toFixed(1) : '0.0';
+                  return (
+                    <div key={item.name} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">{item.name}</span>
+                      <span className="font-medium text-gray-900">
+                        {formatNumber(item.value)} ({percentage}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="No device type data available yet." />
+          )}
+        </SectionCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <SectionCard title="Top Pages" description="Most visited pages in the selected period.">
+          {stats.topPages.length > 0 ? (
+            <div className="overflow-hidden rounded-lg border border-gray-100">
+              <div className="max-h-[320px] overflow-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Page
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Views
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {stats.topPages.slice(0, 10).map((page) => (
+                      <tr key={page.page} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono text-sm text-gray-700">{page.page}</td>
+                        <td className="px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                          {formatNumber(page.views)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <EmptyState message="No page rankings available yet." />
+          )}
+        </SectionCard>
+
+        <SectionCard title="Top Categories" description="Highest-performing category pages.">
+          {stats.topCategories.length > 0 ? (
+            <div className="space-y-3">
+              {stats.topCategories.slice(0, 8).map((item) => (
+                <div
+                  key={item.category}
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50"
+                >
+                  <span className="truncate text-sm font-medium capitalize text-gray-700">
+                    {item.category}
+                  </span>
+                  <span className="ml-4 text-sm font-semibold text-gray-900">
+                    {formatNumber(item.views)} views
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No category performance data available yet." />
+          )}
+        </SectionCard>
+
+        <SectionCard title="Top Articles" description="Most viewed article entries.">
+          {stats.topArticles.length > 0 ? (
+            <div className="space-y-3">
+              {stats.topArticles.slice(0, 8).map((item) => (
+                <div
+                  key={item.articleId}
+                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 hover:bg-gray-50"
+                >
+                  <span className="truncate font-mono text-sm text-gray-700">{item.articleId}</span>
+                  <span className="ml-4 text-sm font-semibold text-gray-900">
+                    {formatNumber(item.views)} views
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No article performance data available yet." />
+          )}
+        </SectionCard>
+      </div>
     </div>
   );
 };
