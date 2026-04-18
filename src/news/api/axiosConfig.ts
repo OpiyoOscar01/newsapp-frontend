@@ -5,48 +5,98 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import { QueryClient } from '@tanstack/react-query'; 
+import { QueryClient } from '@tanstack/react-query';
 import { API_BASE_URL, API_TIMEOUT } from './apiConfig';
+
+// Store reference for accessing token
+let storeRef: any = null;
+let currentToken: string | null = null;
+
+/**
+ * Set the Redux store reference for axios interceptors
+ * Call this in your app entry point after creating the store
+ */
+export const setAxiosStore = (store: any) => {
+  storeRef = store;
+  
+  // Subscribe to store changes to keep token in sync
+  if (store) {
+    // Get initial token
+    const state = store.getState();
+    currentToken = state.auth?.accessToken || null;
+    
+    // Subscribe to future auth changes
+    store.subscribe(() => {
+      const newState = store.getState();
+      const newToken = newState.auth?.accessToken || null;
+      
+      if (newToken !== currentToken) {
+        currentToken = newToken;
+        // Update default header for all future requests
+        if (currentToken) {
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+        } else {
+          delete axiosInstance.defaults.headers.common['Authorization'];
+        }
+      }
+    });
+  }
+};
+
+/**
+ * Get the current access token from Redux store
+ */
+const getAuthToken = (): string | null => {
+  // Return cached token for performance
+  if (currentToken) {
+    return currentToken;
+  }
+  
+  // Fallback to store if needed
+  if (!storeRef) {
+    return null;
+  }
+  
+  try {
+    const state = storeRef.getState();
+    const token = state.auth?.accessToken || null;
+    currentToken = token;
+    return token;
+  } catch (error) {
+    console.error('Failed to get token from store:', error);
+    return null;
+  }
+};
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: API_TIMEOUT,
   headers: {
     Accept: 'application/json',
-    // IMPORTANT: do NOT set Content-Type globally
   },
 });
 
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-
-    // ---------------- Authorization ----------------
-    const token = "6|mFkymrw8ljxFBb6IYG3aCbxmspTkOfZDkz7wBYSnc9dbc411";
+    // Add authorization header
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-
-    // ---------------- Content-Type Strategy ----------------
-    const isFormData =
-      typeof FormData !== 'undefined' && config.data instanceof FormData;
-
+    // Handle Content-Type
+    const isFormData = config.data instanceof FormData;
+    
     if (isFormData) {
-      // Let the browser set: multipart/form-data; boundary=....
-      // Remove any forced JSON content-type if present.
-      // Axios v1 headers can be AxiosHeaders, so support both delete styles.
-      (config.headers as any)?.delete?.('Content-Type');
-      delete (config.headers as any)['Content-Type'];
+      // Let browser set multipart/form-data with boundary
+      delete config.headers['Content-Type'];
     } else {
-      // For JSON requests, set application/json when there's a body.
       const method = (config.method || 'get').toLowerCase();
       const hasBody = ['post', 'put', 'patch', 'delete'].includes(method);
-
+      
       if (hasBody && config.data !== undefined) {
-        (config.headers as any)?.set?.('Content-Type', 'application/json');
-        if (!(config.headers as any)?.set) {
-          (config.headers as any)['Content-Type'] = 'application/json';
-        }
+        config.headers['Content-Type'] = 'application/json';
       }
     }
 
@@ -55,22 +105,56 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-/**
- * Prevents multiple in-flight 401 responses (e.g. several parallel queries
- * all expiring at once) from each triggering a logout + toast + redirect.
- */
-let _isHandling401 = false;
+// Response interceptor for 401 handling
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: any) => void }> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401 && !_isHandling401) {
-      _isHandling401 = true;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue the request while token is being refreshed
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          return axiosInstance(originalRequest);
+        }).catch((err) => {
+          return Promise.reject(err);
+        });
+      }
 
-      // Reset flag after a short window so future logins work normally
-      setTimeout(() => {
-        _isHandling401 = false;
-      }, 3000);
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Dispatch logout on 401
+        if (storeRef) {
+          const { clearAuth } = await import('../../features/authentication/store/slices/authSlice');
+          storeRef.dispatch(clearAuth());
+        }
+        
+        processQueue(null);
+        return Promise.reject(error);
+      } catch (refreshError) {
+        processQueue(refreshError as Error);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
 
     return Promise.reject(error);

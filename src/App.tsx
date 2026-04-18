@@ -7,6 +7,10 @@ import { store, persistor } from './store';
 import AppRoutes from './news/routes/AppRoutes';
 import './App.css';
 import AppInitializer from './news/components/AppInitializer';
+import { setAxiosStore } from './news/api/axiosConfig';
+
+// Set the store reference for axios BEFORE any API calls
+setAxiosStore(store);
 
 // Create a client
 const queryClient = new QueryClient({
@@ -22,7 +26,20 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <Provider store={store}>
-      <PersistGate loading={<div>Loading...</div>} persistor={persistor}>
+      <PersistGate 
+        loading={<div>Loading...</div>} 
+        persistor={persistor}
+        onBeforeLift={() => {
+          // After rehydration, ensure axios has the latest token
+          const state = store.getState();
+          const token = state.auth?.accessToken;
+          if (token) {
+            import('./news/api/axiosConfig').then(({ default: axiosInstance }) => {
+              axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            });
+          }
+        }}
+      >
         <QueryClientProvider client={queryClient}>
           <Router>
             <AppInitializer>
