@@ -1,6 +1,6 @@
 // src/pages/ArticlePage.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   Bookmark,
@@ -27,6 +27,7 @@ import { selectRandomAd } from '../utils/randomAdSelector';
 import { formatFullDate, formatRelativeDate } from '../utils/formatDate';
 import { paginate } from '../utils/paginationHelpers';
 import { ROUTES } from '../routes/routes';
+import { saveRedirectPath } from '../api/auth/AuthQueries';
 
 import RelatedArticles from '../components/RelatedArticles';
 import AdBanner from '../components/AdBanner';
@@ -52,6 +53,7 @@ import type {
   UserInteractions,
 } from '../api/article-interraction/ArticleInteractionTypes';
 import type { Ad } from '../types';
+import type { Article as ApiArticle } from '../api/NewsTypes';
 
 import { useAppSelector } from '../../shared/hooks/useRedux';
 import {
@@ -72,6 +74,21 @@ type ArticleRecord = {
   imageUrl?: string;
   tags?: string[];
 };
+
+// Helper function to convert API Article to ArticleRecord
+const convertToArticleRecord = (apiArticle: ApiArticle): ArticleRecord => ({
+  id: Number(apiArticle.id), // Convert string to number
+  slug: apiArticle.slug,
+  title: apiArticle.title,
+  summary: apiArticle.summary,
+  content: apiArticle.content,
+  category: apiArticle.category,
+  author: apiArticle.author || 'Unknown',
+  publishedAt: apiArticle.publishedAt,
+  readTime: apiArticle.readTime || Math.ceil((apiArticle.content?.length || 0) / 1000),
+  imageUrl: apiArticle.imageUrl,
+  tags: apiArticle.tags ? (Array.isArray(apiArticle.tags) ? apiArticle.tags : JSON.parse(apiArticle.tags)) : [],
+});
 
 const EMPTY_COUNTS: InteractionCounts = {
   views: 0,
@@ -120,8 +137,6 @@ const CommentsSkeleton = () => (
     ))}
   </div>
 );
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                               COMMENT CARD                                 */
@@ -680,6 +695,7 @@ const ArticleInteractionsPanel: React.FC<ArticleInteractionsPanelProps> = ({
 /* -------------------------------------------------------------------------- */
 
 const ArticlePage: React.FC = () => {
+  const navigate = useNavigate();
   const { articleSlug } = useParams<{ articleSlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -723,6 +739,13 @@ const ArticlePage: React.FC = () => {
     }
   }, [isAuthenticated, currentUser]);
 
+  // Handle redirect when user needs to login
+  const handleRequireAuth = () => {
+    // Save current path before redirecting to login
+    saveRedirectPath(window.location.pathname + window.location.search);
+    navigate(loginPath);
+  };
+
   // Load article
   useEffect(() => {
     let cancelled = false;
@@ -746,7 +769,8 @@ const ArticlePage: React.FC = () => {
           return;
         }
 
-        const normalizedArticle = articleData as ArticleRecord;
+        // Use the converter function to properly type the data
+        const normalizedArticle = convertToArticleRecord(articleData);
         setArticle(normalizedArticle);
 
         setSidebarAd(selectRandomAd(normalizedArticle.category, 'sidebar'));
@@ -765,14 +789,19 @@ const ArticlePage: React.FC = () => {
     return () => { cancelled = true; };
   }, [articleSlug]);
 
-  // Load related articles
+  // Load related articles - FIXED: Convert article to proper type for getRelatedArticles
   useEffect(() => {
     let cancelled = false;
 
     const loadRelated = async () => {
       if (!article) return;
       try {
-        const related = await getRelatedArticles(article, 12);
+        // Convert ArticleRecord to the format expected by getRelatedArticles
+        const articleForRelated = {
+          ...article,
+          id: String(article.id), // Convert id to string for the API
+        };
+        const related = await getRelatedArticles(articleForRelated as any, 12);
         if (!cancelled) setAllRelatedArticles(related || []);
       } catch (error) {
         if (!cancelled) console.error('Failed to load related articles:', error);

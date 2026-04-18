@@ -8,9 +8,28 @@ import axios, {
 import { QueryClient } from '@tanstack/react-query';
 import { API_BASE_URL, API_TIMEOUT } from './apiConfig';
 
+// Storage key constant (must match the one in AuthQueries)
+const AUTH_STORAGE_KEY = 'auth_data';
+
 // Store reference for accessing token
 let storeRef: any = null;
 let currentToken: string | null = null;
+
+/**
+ * Get token directly from localStorage
+ */
+const getTokenFromLocalStorage = (): string | null => {
+  try {
+    const storedData = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      return parsed.access_token || null;
+    }
+  } catch (error) {
+    console.error('Failed to read token from localStorage:', error);
+  }
+  return null;
+};
 
 /**
  * Set the Redux store reference for axios interceptors
@@ -19,16 +38,36 @@ let currentToken: string | null = null;
 export const setAxiosStore = (store: any) => {
   storeRef = store;
   
+  // Initialize token from store or localStorage
+  let initialToken: string | null = null;
+  
+  if (store) {
+    const state = store.getState();
+    initialToken = state.auth?.accessToken || null;
+  }
+  
+  // If no token in store, try localStorage
+  if (!initialToken) {
+    initialToken = getTokenFromLocalStorage();
+  }
+  
+  currentToken = initialToken;
+  
+  // Set default header if token exists
+  if (currentToken) {
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+  }
+  
   // Subscribe to store changes to keep token in sync
   if (store) {
-    // Get initial token
-    const state = store.getState();
-    currentToken = state.auth?.accessToken || null;
-    
-    // Subscribe to future auth changes
     store.subscribe(() => {
       const newState = store.getState();
-      const newToken = newState.auth?.accessToken || null;
+      let newToken = newState.auth?.accessToken || null;
+      
+      // If no token in store, check localStorage
+      if (!newToken) {
+        newToken = getTokenFromLocalStorage();
+      }
       
       if (newToken !== currentToken) {
         currentToken = newToken;
@@ -44,28 +83,37 @@ export const setAxiosStore = (store: any) => {
 };
 
 /**
- * Get the current access token from Redux store
+ * Get the current access token from multiple sources
+ * Priority: Redux store -> localStorage -> cached token
  */
 const getAuthToken = (): string | null => {
-  // Return cached token for performance
+  // Return cached token for performance if available
   if (currentToken) {
     return currentToken;
   }
   
-  // Fallback to store if needed
-  if (!storeRef) {
-    return null;
+  // Try to get from Redux store first
+  if (storeRef) {
+    try {
+      const state = storeRef.getState();
+      const token = state.auth?.accessToken || null;
+      if (token) {
+        currentToken = token;
+        return token;
+      }
+    } catch (error) {
+      console.error('Failed to get token from store:', error);
+    }
   }
   
-  try {
-    const state = storeRef.getState();
-    const token = state.auth?.accessToken || null;
-    currentToken = token;
-    return token;
-  } catch (error) {
-    console.error('Failed to get token from store:', error);
-    return null;
+  // Fallback to localStorage
+  const localStorageToken = getTokenFromLocalStorage();
+  if (localStorageToken) {
+    currentToken = localStorageToken;
+    return localStorageToken;
   }
+  
+  return null;
 };
 
 const axiosInstance: AxiosInstance = axios.create({
@@ -83,6 +131,9 @@ axiosInstance.interceptors.request.use(
     const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('[Axios] Token attached to request:', config.url);
+    } else {
+      console.warn('[Axios] No token available for request:', config.url);
     }
 
     // Handle Content-Type
@@ -145,6 +196,11 @@ axiosInstance.interceptors.response.use(
         if (storeRef) {
           const { clearAuth } = await import('../../features/authentication/store/slices/authSlice');
           storeRef.dispatch(clearAuth());
+        } else {
+          // If no store reference, just clear localStorage
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          currentToken = null;
+          delete axiosInstance.defaults.headers.common['Authorization'];
         }
         
         processQueue(null);

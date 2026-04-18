@@ -51,6 +51,7 @@ export const authKeys = {
 /* -------------------------------------------------------------------------- */
 
 const AUTH_STORAGE_KEY = 'auth_data';
+const REDIRECT_PATH_KEY = 'redirect_after_auth';
 
 export const saveAuthData = (data: StoredAuthData): void => {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(data));
@@ -86,6 +87,37 @@ export const setupAuthInterceptor = (onUnauthorized: () => void): void => {
 };
 
 /* -------------------------------------------------------------------------- */
+/*                           REDIRECT PATH HELPERS                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Save the intended redirect path before login/registration
+ */
+export const saveRedirectPath = (path: string): void => {
+  if (path && path !== '/login' && path !== '/register') {
+    localStorage.setItem(REDIRECT_PATH_KEY, path);
+  }
+};
+
+/**
+ * Get and clear the stored redirect path
+ */
+export const getAndClearRedirectPath = (): string | null => {
+  const path = localStorage.getItem(REDIRECT_PATH_KEY);
+  if (path) {
+    localStorage.removeItem(REDIRECT_PATH_KEY);
+  }
+  return path;
+};
+
+/**
+ * Clear redirect path without retrieving it
+ */
+export const clearRedirectPath = (): void => {
+  localStorage.removeItem(REDIRECT_PATH_KEY);
+};
+
+/* -------------------------------------------------------------------------- */
 /*                         AUTHENTICATION HOOKS                               */
 /* -------------------------------------------------------------------------- */
 
@@ -94,7 +126,7 @@ export const setupAuthInterceptor = (onUnauthorized: () => void): void => {
  */
 export const useRegister = (
   callbacks?: {
-    onSuccess?: (data: RegisterResponse) => void;
+    onSuccess?: (data: RegisterResponse, redirectPath?: string | null) => void;
     onError?: (error: AxiosError<RegisterResponse>) => void;
   }
 ) => {
@@ -124,8 +156,14 @@ export const useRegister = (
         
         // Update React Query cache
         queryClient.setQueryData(authKeys.user.profile(), data.data.user);
+        
+        // Get redirect path before clearing
+        const redirectPath = getAndClearRedirectPath();
+        
+        callbacks?.onSuccess?.(data, redirectPath);
+      } else {
+        callbacks?.onSuccess?.(data);
       }
-      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Registration failed:', error.response?.data?.message || error.message);
@@ -140,7 +178,7 @@ export const useRegister = (
  */
 export const useLogin = (
   callbacks?: {
-    onSuccess?: (data: LoginResponse) => void;
+    onSuccess?: (data: LoginResponse, redirectPath?: string | null) => void;
     onError?: (error: AxiosError<LoginResponse>) => void;
   }
 ) => {
@@ -170,8 +208,14 @@ export const useLogin = (
         
         // Update React Query cache
         queryClient.setQueryData(authKeys.user.profile(), data.data.user);
+        
+        // Get redirect path before clearing
+        const redirectPath = getAndClearRedirectPath();
+        
+        callbacks?.onSuccess?.(data, redirectPath);
+      } else {
+        callbacks?.onSuccess?.(data);
       }
-      callbacks?.onSuccess?.(data);
     },
     onError: (error) => {
       console.error('Login failed:', error.response?.data?.message || error.message);
@@ -378,4 +422,7 @@ export default {
   setupAuthInterceptor,
   extractAuthErrorMessage,
   formatAuthValidationErrors,
+  saveRedirectPath,
+  getAndClearRedirectPath,
+  clearRedirectPath,
 };
