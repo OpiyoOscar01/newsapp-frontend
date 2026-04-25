@@ -24,7 +24,7 @@ const AdminDashboard: React.FC = () => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
   const isLoading = useAppSelector(selectIsLoading);
-  const [activeTab, setActiveTab] = React.useState<ActiveTab>('analytics');
+  const [activeTab, setActiveTab] = React.useState<ActiveTab>('news-fetcher');
 
   const { mutate: logout } = useLogout({
     onSuccess: () => {
