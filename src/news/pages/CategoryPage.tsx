@@ -377,7 +377,7 @@ const CategoryPage: React.FC = () => {
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
                 <h3 className="mb-4 text-lg font-semibold text-gray-900">Popular Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {category.tags.slice(0, 10).map((tag) => (
+                  {category.tags && category.tags.slice(0, 10).map((tag: string) => (
                     <button
                       key={tag}
                       onClick={() => handleSearch(tag)}

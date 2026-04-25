@@ -76,6 +76,8 @@ export interface Category {
   color: string;
   articleCount?: number;
   isActive?: boolean;
+  tags?: string[]; // Optional tags array
+
 }
 
 export interface ArticleFilters {
