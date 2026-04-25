@@ -7,7 +7,6 @@ import {
   Newspaper, 
   FileText, 
   Settings,
-  TrendingUp,
   Home
 } from 'lucide-react';
 import MediaStackFetcher from '../components/MediaStackFetcher';
