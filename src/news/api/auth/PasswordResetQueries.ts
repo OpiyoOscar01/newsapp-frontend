@@ -16,7 +16,6 @@ import { axiosInstance } from './../axiosConfig';
 import type {
   SendResetLinkRequest,
   SendResetLinkResponse,
-  VerifyTokenRequest,
   VerifyTokenResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
@@ -61,29 +60,7 @@ export const useSendResetLink = (
   });
 };
 
-/**
- * Verify password reset token
- */
-export const useVerifyToken = (
-  callbacks?: {
-    onSuccess?: (data: VerifyTokenResponse) => void;
-    onError?: (error: AxiosError<VerifyTokenResponse>) => void;
-  }
-) => {
-  return useMutation<VerifyTokenResponse, AxiosError<VerifyTokenResponse>, VerifyTokenRequest>({
-    mutationFn: async (data: VerifyTokenRequest) => {
-      const response = await axiosInstance.post<VerifyTokenResponse>('/password-reset/verify-token', data);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      callbacks?.onSuccess?.(data);
-    },
-    onError: (error) => {
-      console.error('Token verification failed:', error.response?.data?.message || error.message);
-      callbacks?.onError?.(error);
-    },
-  });
-};
+
 
 /**
  * Reset password with token and new password
@@ -137,7 +114,6 @@ export const isValidationError = (
 
 export default {
   useSendResetLink,
-  useVerifyToken,
   useResetPassword,
   passwordResetKeys,
   extractPasswordResetErrors,

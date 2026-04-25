@@ -5,6 +5,7 @@ import { Mail, ArrowLeft, Send } from 'lucide-react';
 import { ToastContainer } from '../components/Notifications/Toast';
 import { useToast } from '../../features/news/hooks/useToast';
 import { ROUTES } from '../routes/routes';
+import { useSendResetLink } from '../api/auth/PasswordResetQueries';
 
 interface ResetRequestValidationErrors {
   email?: string[];
@@ -15,9 +16,28 @@ const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
   const { toasts, success, error, removeToast } = useToast();
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ResetRequestValidationErrors>({});
   const [emailSent, setEmailSent] = useState(false);
+
+  const { mutate: sendResetLink, isPending: isSubmitting } = useSendResetLink({
+    onSuccess: (data) => {
+      success(data.message);
+      setEmailSent(true);
+    },
+    onError: (err: any) => {
+      console.error('Password reset request error:', err);
+      
+      if (err.response?.data?.errors) {
+        setValidationErrors(err.response.data.errors);
+      } else if (err.response?.data?.message) {
+        error(err.response.data.message);
+        setValidationErrors({ general: [err.response.data.message] });
+      } else {
+        error('Failed to send reset link. Please try again.');
+        setValidationErrors({ general: ['Failed to send reset link. Please try again.'] });
+      }
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
@@ -39,48 +59,15 @@ const ForgotPassword: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
     
-    setIsSubmitting(true);
     setValidationErrors({});
-    
-    // TODO: Integrate with backend API
-    // For now, simulate API call
-    try {
-      // const response = await passwordResetRequest({ email });
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simulate success (in real implementation, check response)
-      success(`Password reset link sent to ${email}!`);
-      setEmailSent(true);
-      
-      // Optionally redirect after delay
-      // setTimeout(() => {
-      //   navigate(ROUTES.LOGIN);
-      // }, 3000);
-      
-    } catch (err: any) {
-      console.error('Password reset request error:', err);
-      
-      if (err.response?.data?.errors) {
-        setValidationErrors(err.response.data.errors);
-      } else if (err.response?.data?.message) {
-        error(err.response.data.message);
-        setValidationErrors({ general: [err.response.data.message] });
-      } else {
-        error('Failed to send reset link. Please try again.');
-        setValidationErrors({ general: ['Failed to send reset link. Please try again.'] });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    sendResetLink({ email });
   };
 
   const getFieldError = (fieldName: keyof ResetRequestValidationErrors): string => {

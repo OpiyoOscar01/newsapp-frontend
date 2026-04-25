@@ -5,11 +5,12 @@ import { Lock, Eye, EyeOff, CheckCircle, ArrowLeft } from 'lucide-react';
 import { ToastContainer } from '../components/Notifications/Toast';
 import { useToast } from '../../features/news/hooks/useToast';
 import { ROUTES } from '../routes/routes';
+import { useResetPassword } from '../api/auth/PasswordResetQueries';
 
 const PasswordResetConfirm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toasts, error, removeToast } = useToast();
+  const { toasts, success, error, removeToast } = useToast();
   
   // Get token and email from URL query parameters
   const queryParams = new URLSearchParams(location.search);
@@ -23,14 +24,47 @@ const PasswordResetConfirm: React.FC = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({});
+
+  // Reset password mutation
+  const { mutate: resetPassword, isPending: isSubmitting } = useResetPassword({
+    onSuccess: (data) => {
+      success(data.message);
+      setTimeout(() => {
+        navigate(ROUTES.LOGIN);
+      }, 2000);
+    },
+    onError: (err: any) => {
+      console.error('Password reset error:', err);
+      
+      if (err.response?.data?.errors) {
+        setValidationErrors(err.response.data.errors);
+        error('Validation failed. Please check your input.');
+      } else if (err.response?.data?.message) {
+        error(err.response.data.message);
+        setValidationErrors({ general: [err.response.data.message] });
+      } else {
+        error('Failed to reset password. Please try again.');
+        setValidationErrors({ general: ['Failed to reset password. Please try again.'] });
+      }
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!token || !email) {
@@ -38,22 +72,14 @@ const PasswordResetConfirm: React.FC = () => {
       return;
     }
     
-    setIsSubmitting(true);
+    setValidationErrors({});
     
-    // TODO: Add your hook here to handle backend submission
-    // The data to submit:
-    const resetData = {
-      token: token,
+    resetPassword({
+      token,
       email: decodeURIComponent(email),
       password: formData.password,
       password_confirmation: formData.password_confirmation
-    };
-    
-    console.log('Submitting reset data:', resetData);
-    
-    // Your hook will handle the API call and response
-    
-    setIsSubmitting(false);
+    });
   };
 
   const togglePasswordVisibility = () => {
@@ -62,6 +88,10 @@ const PasswordResetConfirm: React.FC = () => {
 
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const getFieldError = (fieldName: string): string => {
+    return validationErrors[fieldName]?.join(', ') || '';
   };
 
   return (
@@ -101,7 +131,9 @@ const PasswordResetConfirm: React.FC = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-text"
+                    className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
+                      getFieldError('password') ? 'border-red-300' : 'border-gray-300'
+                    } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-text`}
                     placeholder="Enter your new password"
                     disabled={isSubmitting}
                   />
@@ -118,6 +150,9 @@ const PasswordResetConfirm: React.FC = () => {
                     )}
                   </button>
                 </div>
+                {getFieldError('password') && (
+                  <p className="mt-1 text-xs text-red-600">{getFieldError('password')}</p>
+                )}
                 <p className="mt-2 text-xs text-gray-500">
                   Password must be at least 8 characters
                 </p>
@@ -139,7 +174,9 @@ const PasswordResetConfirm: React.FC = () => {
                     required
                     value={formData.password_confirmation}
                     onChange={handleChange}
-                    className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-text"
+                    className={`appearance-none block w-full pl-10 pr-10 py-2 border ${
+                      getFieldError('password_confirmation') ? 'border-red-300' : 'border-gray-300'
+                    } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm cursor-text`}
                     placeholder="Confirm your new password"
                     disabled={isSubmitting}
                   />
@@ -156,7 +193,22 @@ const PasswordResetConfirm: React.FC = () => {
                     )}
                   </button>
                 </div>
+                {getFieldError('password_confirmation') && (
+                  <p className="mt-1 text-xs text-red-600">{getFieldError('password_confirmation')}</p>
+                )}
+                {formData.password_confirmation && formData.password === formData.password_confirmation && (
+                  <p className="mt-1 text-xs text-green-600 flex items-center">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Passwords match
+                  </p>
+                )}
               </div>
+
+              {getFieldError('general') && (
+                <div className="rounded-md bg-red-50 p-3">
+                  <p className="text-sm text-red-800">{getFieldError('general')}</p>
+                </div>
+              )}
 
               <div>
                 <button
