@@ -16,11 +16,13 @@ import { useLogout } from '../api/auth/AuthQueries';
 const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen]         = useState(false);
+  const [desktopQuery, setDesktopQuery]         = useState('');
   const [categories, setCategories]             = useState<Category[]>([]);
   const [loading, setLoading]                   = useState(true);
   const [, setError]                            = useState<string | null>(null);
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef   = useRef<HTMLInputElement>(null);
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
   const location       = useLocation();
   const navigate       = useNavigate();
 
@@ -57,7 +59,7 @@ const Navbar: React.FC = () => {
   }, [isSearchOpen]);
 
   useEffect(() => {
-    setIsSearchOpen(false); setIsMobileMenuOpen(false);
+    setIsSearchOpen(false); setIsMobileMenuOpen(false); setDesktopQuery('');
   }, [location.pathname, location.search]);
 
   useEffect(() => {
@@ -136,10 +138,46 @@ const Navbar: React.FC = () => {
               Define<span>Press</span>
             </Link>
 
+            {/* Inline search — desktop only, sits between logo and actions */}
+            <div className="dp-inline-search">
+              <Search className="w-4 h-4 dp-inline-search__icon" aria-hidden />
+              <input
+                ref={desktopSearchRef}
+                type="text"
+                className="dp-inline-search__input"
+                placeholder="Search articles, topics…"
+                value={desktopQuery}
+                onChange={e => setDesktopQuery(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { handleSearch(desktopQuery); setDesktopQuery(''); } }}
+              />
+              {desktopQuery && (
+                <button
+                  className="dp-inline-search__clear"
+                  onClick={() => { setDesktopQuery(''); desktopSearchRef.current?.focus(); }}
+                  aria-label="Clear search"
+                  tabIndex={-1}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {desktopQuery && (
+                <>
+                  <span className="dp-inline-search__divider" aria-hidden />
+                  <button
+                    className="dp-inline-search__submit"
+                    onClick={() => { handleSearch(desktopQuery); setDesktopQuery(''); }}
+                    aria-label="Submit search"
+                  >
+                    Search
+                  </button>
+                </>
+              )}
+            </div>
+
             <div className="dp-actions">
-              {/* Search toggle */}
+              {/* Search toggle — mobile only */}
               <button
-                className={`dp-icon-btn${isSearchOpen ? ' dp-icon-btn--active' : ''}`}
+                className={`dp-icon-btn dp-search-mobile-toggle${isSearchOpen ? ' dp-icon-btn--active' : ''}`}
                 onClick={() => setIsSearchOpen(v => !v)}
                 aria-label={isSearchOpen ? 'Close search' : 'Open search'}
                 aria-expanded={isSearchOpen}
@@ -191,7 +229,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* ════ Search slide-down bar ════ */}
+        {/* ════ Search slide-down bar — mobile only ════ */}
         <div
           className={`dp-searchbar${isSearchOpen ? ' dp-searchbar--open' : ''}`}
           aria-hidden={!isSearchOpen}
@@ -379,6 +417,67 @@ const CSS = `
   .dp-actions { display: flex; align-items: center; gap: 8px; }
   .dp-auth    { display: none; }
   @media (min-width: 640px) { .dp-auth { display: flex; align-items: center; } }
+
+  /* ── Inline search (desktop only) ── */
+  .dp-inline-search {
+    display: none;
+  }
+  @media (min-width: 768px) {
+    .dp-inline-search {
+      display: flex; align-items: center; gap: 8px;
+      flex: 1; max-width: 420px;
+      margin: 0 1.5rem;
+      padding: 0 14px; height: 36px;
+      background: #f3f4f6;
+      border: 1px solid var(--dp-border);
+      border-radius: var(--dp-radius-full);
+      transition: border-color .15s, box-shadow .15s;
+      cursor: text;
+    }
+    .dp-inline-search:focus-within {
+      border-color: #bfdbfe;
+      box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+      background: #fff;
+    }
+  }
+  .dp-inline-search__icon { color: var(--dp-ink-soft); flex-shrink: 0; }
+  .dp-inline-search__input {
+    flex: 1; border: none; background: none;
+    font-family: var(--dp-font-ui); font-size: 0.85rem;
+    color: var(--dp-ink); outline: none; min-width: 0;
+  }
+  .dp-inline-search__input::placeholder { color: var(--dp-ink-soft); }
+
+  .dp-inline-search__clear {
+    display: flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; flex-shrink: 0;
+    border-radius: 50%; border: none;
+    background: #d1d5db; color: #374151;
+    cursor: pointer; transition: background .12s;
+    padding: 0;
+  }
+  .dp-inline-search__clear:hover { background: #9ca3af; color: #fff; }
+
+  .dp-inline-search__divider {
+    display: block; width: 1px; height: 18px;
+    background: var(--dp-border); flex-shrink: 0; margin: 0 2px;
+  }
+
+  .dp-inline-search__submit {
+    display: flex; align-items: center;
+    padding: 3px 10px; flex-shrink: 0;
+    border-radius: var(--dp-radius-full);
+    border: none; background: var(--dp-accent); color: #fff;
+    font-family: var(--dp-font-ui); font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background .15s;
+  }
+  .dp-inline-search__submit:hover { background: var(--dp-accent-hover); }
+
+  /* ── Mobile-only: slide-down bar + search toggle ── */
+  @media (min-width: 768px) {
+    .dp-searchbar { display: none !important; }
+    .dp-search-mobile-toggle { display: none !important; }
+  }
 
   /* ── Icon btn ── */
   .dp-icon-btn {
