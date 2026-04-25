@@ -1,5 +1,6 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/CategoryPage.tsx
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useCategoryPage } from '../hooks/useCategoryPage';
 import NewsCard from '../components/NewsCard';
 import AdBanner from '../components/AdBanner';
@@ -7,10 +8,17 @@ import Pagination from '../components/Pagination';
 import SearchBar from '../components/SearchBar';
 import CompactNewsCard from '../components/CompactNewsCard';
 import { CategoryPageSkeleton } from '../components/LoadingSkeletons';
-import { type Article } from '../types'; // Make sure to import the Article type
+import { ROUTES } from '../routes/routes';
+import { useSubscribe } from '../api/newsletter/NewsletterQueries';
+import { useAppSelector } from '../../shared/hooks/useRedux';
+import { selectIsAuthenticated, selectUser } from '../../features/authentication/store/slices/authSlice';
+import type { Article } from '../types';
 
 const CategoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const currentUser = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  
   const {
     category,
     loading,
@@ -28,6 +36,37 @@ const CategoryPage: React.FC = () => {
     handleItemsPerPageChange,
     handleRetry,
   } = useCategoryPage();
+
+  // Newsletter state
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+  const [newsletterIsError, setNewsletterIsError] = useState(false);
+
+  const { mutate: subscribe, isPending: newsletterLoading } = useSubscribe({
+    onSuccess: (data) => {
+      setNewsletterMessage(data.message);
+      setNewsletterIsError(false);
+      setTimeout(() => setNewsletterMessage(''), 3000);
+    },
+    onError: (error: any) => {
+      setNewsletterMessage(error?.response?.data?.message || 'Subscription failed');
+      setNewsletterIsError(true);
+      setTimeout(() => setNewsletterMessage(''), 3000);
+    },
+  });
+
+  // Set email for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && currentUser?.email) {
+      setNewsletterEmail(currentUser.email);
+    }
+  }, [isAuthenticated, currentUser]);
+
+  const handleNewsletterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    subscribe({ email: newsletterEmail.trim() });
+  };
 
   if (loading) {
     return <CategoryPageSkeleton />;
@@ -109,7 +148,7 @@ const CategoryPage: React.FC = () => {
                   id="sort-select"
                   value={sortBy}
                   onChange={(e) => handleSortChange(e.target.value as 'date' | 'title' | 'readTime')}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer"
                 >
                   <option value="date">Latest</option>
                   <option value="title">Title A-Z</option>
@@ -131,7 +170,7 @@ const CategoryPage: React.FC = () => {
                   id="items-per-page"
                   value={itemsPerPage}
                   onChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-auto"
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-auto cursor-pointer"
                 >
                   <option value="4">4 articles</option>
                   <option value="8">8 articles</option>
@@ -185,7 +224,7 @@ const CategoryPage: React.FC = () => {
           {paginatedData.items.length > 0 ? (
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {paginatedData.items.map((article: Article) => ( // Explicitly type the article parameter
+                {paginatedData.items.map((article: Article) => (
                   <div key={article.id}>
                     {/* Mobile version */}
                     <div className="md:hidden">
@@ -234,7 +273,7 @@ const CategoryPage: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => handleSearch('')}
-                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors cursor-pointer"
                 >
                   Clear search
                 </button>
@@ -243,8 +282,8 @@ const CategoryPage: React.FC = () => {
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
+        {/* Sidebar - Matching ArticlePage Sidebar Style */}
+        <aside className="lg:col-span-1">
           <div className="sticky top-24 space-y-6 lg:space-y-8">
             {/* Ad 2: Sidebar Ad */}
             {sidebarAd && (
@@ -257,41 +296,101 @@ const CategoryPage: React.FC = () => {
               </div>
             )}
 
-            {/* Popular Categories */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Other Categories</h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => navigate('/')}
-                  className="block w-full text-left px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition-colors"
-                >
-                  Browse All Categories
-                </button>
-              </div>
+            {/* Category Info Card - Similar to Article Info */}
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">Category Info</h3>
+              
+              <dl className="space-y-3">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Category Name</dt>
+                  <dd className="mt-1 text-sm capitalize text-gray-900">
+                    {category.name}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Total Articles</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {filteredAndSortedArticles.length} articles
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Browse All</dt>
+                  <dd className="mt-1">
+                    <Link
+                      to={ROUTES.HOME}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      View All Categories →
+                    </Link>
+                  </dd>
+                </div>
+              </dl>
             </div>
 
-            {/* Newsletter Signup */}
-            <div className="bg-primary-50 rounded-lg p-6 border border-primary-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Stay Updated</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            {/* Newsletter Signup Card - Matching ArticlePage Style */}
+            <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">Stay Updated</h3>
+              <p className="mb-4 text-sm text-gray-600">
                 Get the latest {category.name.toLowerCase()} news delivered to your inbox.
               </p>
-              <form className="space-y-3">
+
+              <form onSubmit={handleNewsletterSubmit} className="space-y-3">
                 <input
                   type="email"
-                  placeholder="Your email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  placeholder="Your email address"
+                  className="w-full cursor-text rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
+
                 <button
                   type="submit"
-                  className="w-full px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-md hover:bg-primary-700 transition-colors"
+                  disabled={newsletterLoading}
+                  className="w-full cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Subscribe
+                  {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </form>
+
+              {newsletterMessage && (
+                <p
+                  className={`mt-3 text-center text-xs ${
+                    newsletterIsError ? 'text-red-600' : 'text-green-600'
+                  }`}
+                >
+                  {newsletterMessage}
+                </p>
+              )}
+
+              {isAuthenticated && currentUser?.email && (
+                <p className="mt-3 text-xs text-gray-500">
+                  Signed in as <span className="font-medium">{currentUser.email}</span>
+                </p>
+              )}
             </div>
+
+            {/* Popular Tags Section - Optional Enhancement */}
+            {category.tags && category.tags.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">Popular Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {category.tags.slice(0, 10).map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleSearch(tag)}
+                      className="inline-flex cursor-pointer rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 transition-colors"
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
