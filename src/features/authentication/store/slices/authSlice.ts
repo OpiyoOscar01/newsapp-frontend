@@ -148,6 +148,12 @@ export const selectAccessToken = (state: { auth: AuthState }) => state.auth.acce
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 export const selectIsLoading = (state: { auth: AuthState }) => state.auth.isLoading;
 export const selectAuthError = (state: { auth: AuthState }) => state.auth.error;
+export const selectIsAdmin = (state: { auth: AuthState }) =>
+  Boolean(
+    state.auth.user?.is_admin ||
+      state.auth.user?.roles?.includes('admin')
+  );
+
 
 /* -------------------------------------------------------------------------- */
 /*                               REDUCER                                      */

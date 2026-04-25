@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { hydrateAuth } from '../../features/authentication/store/slices/authSlice';
-import VisitorAnalyticsTracker from './Admin/VisitorAnalyticsTracker';
+// import VisitorAnalyticsTracker from './Admin/VisitorAnalyticsTracker';
 // import VisitorAnalyticsDebugPanel from './Admin/VisitorAnalyticsDebugPanel';
 
 
@@ -18,7 +18,7 @@ const AppInitializer: React.FC<AppInitializerProps> = ({ children }) => {
 
   return (
     <>
-      <VisitorAnalyticsTracker />
+      {/* <VisitorAnalyticsTracker /> */}
       {children}
       {/* <VisitorAnalyticsDebugPanel /> */}
     </>
