@@ -18,6 +18,8 @@ import UserLogin from '../pages/UserLogin';
 import UserRegistration from '../pages/UserRegistration';
 import { ROUTES } from './routes';
 import NotFoundPage from '../pages/NotFoundPage';
+import PasswordResetConfirm from '../pages/PasswordResetConfirm';
+import PasswordResetRequest from '../pages/ForgotPassword';
 const AppRoutes: React.FC = () => {
   return (
     <>
@@ -40,6 +42,8 @@ const AppRoutes: React.FC = () => {
         {/* Auth Routes */}
         <Route path={ROUTES.REGISTER} element={<Layout><UserRegistration /></Layout>} />
         <Route path={ROUTES.LOGIN} element={<Layout><UserLogin /></Layout>} />
+        <Route path={ROUTES.RESET_PASSWORD} element={<Layout><PasswordResetConfirm /></Layout>} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<Layout><PasswordResetRequest /></Layout>} />
         
         {/* Admin Routes (without main layout) */}
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
