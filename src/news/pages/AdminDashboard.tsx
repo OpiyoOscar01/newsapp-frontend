@@ -57,7 +57,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   const navItems = [
-    { id: 'analytics' as ActiveTab, label: 'Visitor Analytics', icon: TrendingUp },
+    // { id: 'analytics' as ActiveTab, label: 'Visitor Analytics', icon: TrendingUp },
     { id: 'news-fetcher' as ActiveTab, label: 'News Fetcher', icon: Newspaper },
     // { id: 'articles' as ActiveTab, label: 'Article Management', icon: FileText },
     // { id: 'settings' as ActiveTab, label: 'Settings', icon: Settings },
