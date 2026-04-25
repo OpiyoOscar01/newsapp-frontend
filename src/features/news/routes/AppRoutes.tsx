@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from '../components/Layout';
 import CategoryPage from '../components/CategoryPage';
 import ArticlePage from '../components/ArticlePage';
 
@@ -11,7 +10,6 @@ import ArticlePage from '../components/ArticlePage';
 const AppRoutes: React.FC = () => {
   return (
     <Router>
-      <Layout>
         <Routes>
           {/* Home route - redirects to categories */}
           <Route path="/" element={<Navigate to="/categories" replace />} />
@@ -25,7 +23,6 @@ const AppRoutes: React.FC = () => {
           {/* Catch-all route for 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-      </Layout>
     </Router>
   );
 };
