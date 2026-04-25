@@ -131,9 +131,7 @@ axiosInstance.interceptors.request.use(
     const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('[Axios] Token attached to request:', config.url);
     } else {
-      console.warn('[Axios] No token available for request:', config.url);
     }
 
     // Handle Content-Type
