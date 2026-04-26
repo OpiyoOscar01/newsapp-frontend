@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { type Article } from '../types';
 import { formatDate } from '../utils/formatDate';
@@ -16,7 +16,12 @@ const CompactNewsCard: React.FC<CompactNewsCardProps> = ({
   priority = 'normal',
   className = ''
 }) => {
-  
+  const [imageError, setImageError] = useState(false);
+
+  // If image fails to load, don't render the card at all
+  if (imageError) {
+    return null;
+  }
 
   return (
     <article className={`compact-news-card ${className}`}>
@@ -50,6 +55,7 @@ const CompactNewsCard: React.FC<CompactNewsCardProps> = ({
               alt={article.title}
               className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
               loading={priority === 'high' ? 'eager' : 'lazy'}
+              onError={() => setImageError(true)} // 👈 THIS IS CRITICAL
             />
             
             {/* Hover Overlay */}

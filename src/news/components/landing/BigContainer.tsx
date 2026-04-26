@@ -16,7 +16,12 @@ const BigContainer: React.FC<BigContainerProps> = ({
   sidebarAd,
   showAdHelperText = false,
 }) => {
-  if (!articles || articles.length === 0) {
+  // Filter out undefined/null articles (NewsCard returns null for broken images)
+  // Note: NewsCard now returns null for articles with broken images,
+  // so we need to pre-filter or handle gracefully
+  const validArticles = articles.filter(article => article && article.imageUrl);
+  
+  if (!validArticles || validArticles.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         No articles available for this category.
@@ -25,27 +30,29 @@ const BigContainer: React.FC<BigContainerProps> = ({
   }
 
   // Based on the image: Main card (left), side ad (top-right), and 3 cards in bottom row
-  const main = articles[0];
-  const rightTop = articles[1];
-  const bottomLeft = articles[2];
-  const bottomMid = articles[3];
-  const bottomRight = articles[4];
-  const mobile5 = articles[5];
+  const main = validArticles[0];
+  const rightTop = validArticles[1];
+  const bottomLeft = validArticles[2];
+  const bottomMid = validArticles[3];
+  const bottomRight = validArticles[4];
+  const mobile5 = validArticles[5];
 
   return (
     <div className="w-full">
       {/* Desktop grid - 3 columns */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* MAIN CARD - spans 2 columns, row 1 */}
-        <div className="lg:col-span-2">
-          <NewsCard
-            article={main}
-            variant="large"
-            priority="high"
-            isFirstInCategory={true}
-            showCategory={true}
-          />
-        </div>
+        {main && (
+          <div className="lg:col-span-2">
+            <NewsCard
+              article={main}
+              variant="large"
+              priority="high"
+              isFirstInCategory={true}
+              showCategory={true}
+            />
+          </div>
+        )}
 
         {/* SIDE AD - column 3, row 1 */}
         {sidebarAd && (

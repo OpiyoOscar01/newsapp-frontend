@@ -349,13 +349,15 @@ const LandingPage: React.FC = () => {
 
   const isInitialLoading = categoriesLoading || featuredLoading;
 
-  const getCategorySlice = (slug: string, isBig: boolean): AppArticle[] => {
-    const list = categoryArticles.get(slug) ?? [];
-    const want = isBig
-      ? Math.max(DESKTOP_BIG_ITEMS, MOBILE_ITEMS_PER_CATEGORY)
-      : Math.max(DESKTOP_NORMAL_ITEMS, MOBILE_ITEMS_PER_CATEGORY);
-    return list.slice(0, want);
-  };
+    const getCategorySlice = (slug: string, isBig: boolean): AppArticle[] => {
+      const list = categoryArticles.get(slug) ?? [];
+      // Filter out articles with broken/missing images
+      const validArticles = list.filter(article => article && article.imageUrl);
+      const want = isBig
+        ? Math.max(DESKTOP_BIG_ITEMS, MOBILE_ITEMS_PER_CATEGORY)
+        : Math.max(DESKTOP_NORMAL_ITEMS, MOBILE_ITEMS_PER_CATEGORY);
+      return validArticles.slice(0, want);
+    };
 
   const generalCategory = categories.find((c) => c.slug === "general") ?? categories[0];
   const remainingCategories = categories.filter((c) => c.slug !== generalCategory?.slug);

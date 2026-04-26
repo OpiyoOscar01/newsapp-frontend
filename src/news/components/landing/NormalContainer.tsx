@@ -42,7 +42,10 @@ const NormalContainer: React.FC<NormalContainerProps> = ({
   exploreHref, 
   shouldInsertAd = false,
 }) => {
-  if (!articles || articles.length === 0) {
+  // Filter out articles with invalid image URLs (NewsCard will return null for broken images)
+  const validArticles = articles.filter(article => article && article.imageUrl);
+  
+  if (!validArticles || validArticles.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         No articles available for this category.
@@ -60,28 +63,30 @@ const NormalContainer: React.FC<NormalContainerProps> = ({
     }
   }, [isNear, shouldInsertAd]);
 
-  const top = articles[0];
-  const a1 = articles[1];
-  const a2 = articles[2];
-  const a3 = articles[3];
-  const a4 = articles[4];
-  const a5 = articles[5];
+  const top = validArticles[0];
+  const a1 = validArticles[1];
+  const a2 = validArticles[2];
+  const a3 = validArticles[3];
+  const a4 = validArticles[4];
+  const a5 = validArticles[5];
 
   return (
     <div className="w-full" ref={ref}>
       <div className="space-y-4 lg:space-y-6">
         {/* TOP CARD - First article in category: Image on top, text below on all screens */}
-        <div>
-          <NewsCard
-            article={top}
-            variant="large" // Changed from 'wide' to 'large' to ensure text below image
-            priority="normal"
-            isFirstInCategory={true}
-            showCategory={true}
-            hideMetaMobile={false} // Always show metadata for first card
-            orientation="vertical" // Force vertical orientation for text below image
-          />
-        </div>
+        {top && (
+          <div>
+            <NewsCard
+              article={top}
+              variant="large" // Changed from 'wide' to 'large' to ensure text below image
+              priority="normal"
+              isFirstInCategory={true}
+              showCategory={true}
+              hideMetaMobile={false} // Always show metadata for first card
+              orientation="vertical" // Force vertical orientation for text below image
+            />
+          </div>
+        )}
 
         {/* Bottom grid mounts only when near viewport */}
         {isNear && (

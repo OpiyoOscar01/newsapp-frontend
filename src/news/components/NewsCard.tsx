@@ -23,6 +23,7 @@ interface NewsCardProps {
 const useLazyImage = (priority: 'high' | 'normal' = 'normal', isLoading?: boolean) => {
   const [isLoaded, setIsLoaded] = useState(priority === 'high' && !isLoading);
   const [isInView, setIsInView] = useState(priority === 'high' && !isLoading);
+  const [hasError, setHasError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,11 +57,17 @@ const useLazyImage = (priority: 'high' | 'normal' = 'normal', isLoading?: boolea
     }
   };
 
+  const handleError = () => {
+    setHasError(true);
+  };
+
   return {
     containerRef,
     isLoaded: isLoading ? false : isLoaded,
     isInView: isLoading ? false : isInView,
+    hasError,
     handleLoad,
+    handleError,
     shouldLoad: isLoading ? false : (isInView || priority === 'high')
   };
 };
@@ -147,7 +154,15 @@ const NewsCard: React.FC<NewsCardProps> = ({
   priority = 'normal',
   isLoading = false // Default to false
 }) => {
-  const { containerRef, isLoaded, handleLoad, shouldLoad } = useLazyImage(priority, isLoading);
+  const { containerRef, isLoaded, handleLoad, shouldLoad, hasError, handleError } = useLazyImage(priority, isLoading);
+  const [imageError, setImageError] = useState(false);
+
+  // Sync image error state
+  useEffect(() => {
+    if (hasError) {
+      setImageError(true);
+    }
+  }, [hasError]);
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
@@ -189,6 +204,9 @@ const NewsCard: React.FC<NewsCardProps> = ({
       );
     }
 
+    // Don't render image if there's an error
+    if (imageError) return null;
+
     return (
       <div 
         ref={containerRef} 
@@ -200,7 +218,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         )}
         
         {/* Actual image */}
-        {shouldLoad && (
+        {shouldLoad && !imageError && (
           <img
             src={article?.imageUrl}
             alt={article?.title}
@@ -211,15 +229,18 @@ const NewsCard: React.FC<NewsCardProps> = ({
             `}
             loading={priority === 'high' ? 'eager' : 'lazy'}
             onLoad={handleLoad}
+            onError={handleError}
             decoding="async"
           />
         )}
         
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        {!imageError && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+        )}
         
         {/* Category badge */}
-        {showCategory && isLoaded && variant !== 'compact' && article && (
+        {!imageError && showCategory && isLoaded && variant !== 'compact' && article && (
           <div className="absolute top-6 left-6">
             <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold capitalize shadow-lg backdrop-blur-sm ${getCategoryColor(article.category)}`}>
               {article.category}
@@ -409,9 +430,11 @@ const NewsCard: React.FC<NewsCardProps> = ({
     }
   }
 
-  // Return null if no article provided
-  if (!article) {
-    console.warn('NewsCard component rendered without article data');
+  // Return null if no article provided OR image is broken
+  if (!article || imageError) {
+    if (imageError) {
+      console.warn('NewsCard: Image failed to load for article:', article?.slug);
+    }
     return null;
   }
 
@@ -508,7 +531,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
             <div className="flex items-stretch md:block gap-3">
 
               {/* 🖼️ Image Container */}
-              {showImage && (
+              {showImage && !imageError && (
                 <div
                   ref={containerRef}
                   className={`
@@ -524,7 +547,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   )}
                   
                   {/* Actual image */}
-                  {shouldLoad && (
+                  {shouldLoad && !imageError && (
                     <img
                       src={article.imageUrl}
                       alt={article.title}
@@ -536,20 +559,23 @@ const NewsCard: React.FC<NewsCardProps> = ({
                       `}
                       loading={priority === 'high' ? 'eager' : 'lazy'}
                       onLoad={handleLoad}
+                      onError={handleError}
                       decoding="async"
                     />
                   )}
 
                   {/* 🌫️ Overlay gradient for hover effect */}
-                  <div
-                    className="
-                      absolute inset-0 bg-gradient-to-t from-black/30 to-transparent 
-                      opacity-0 group-hover:opacity-60 transition-opacity duration-300
-                    "
-                  />
+                  {!imageError && (
+                    <div
+                      className="
+                        absolute inset-0 bg-gradient-to-t from-black/30 to-transparent 
+                        opacity-0 group-hover:opacity-60 transition-opacity duration-300
+                      "
+                    />
+                  )}
 
                   {/* 🏷️ Desktop category badge */}
-                  {showCategory && isLoaded && (
+                  {!imageError && showCategory && isLoaded && (
                     <div className="absolute top-2 left-2 hidden md:block">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${getCategoryColor(
@@ -633,7 +659,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
     return (
       <article className={cardClasses}>
         <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col md:flex-row cursor-pointer">
-          {showImage && (
+          {showImage && !imageError && (
             <div ref={containerRef} className="relative overflow-hidden md:w-1/2 flex-shrink-0">
               {/* Image skeleton/placeholder */}
               {!isLoaded && (
@@ -641,7 +667,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
               )}
               
               {/* Actual image */}
-              {shouldLoad && (
+              {shouldLoad && !imageError && (
                 <img
                   src={article.imageUrl}
                   alt={article.title}
@@ -651,14 +677,17 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   `}
                   loading={priority === 'high' ? 'eager' : 'lazy'}
                   onLoad={handleLoad}
+                  onError={handleError}
                   decoding="async"
                 />
               )}
               
               {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              {!imageError && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+              )}
               
-              {showCategory && isLoaded && (
+              {!imageError && showCategory && isLoaded && (
                 <div className="absolute top-4 left-4">
                   <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold capitalize shadow-md backdrop-blur-sm ${getCategoryColor(article.category)}`}>
                     {article.category}
@@ -697,7 +726,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
     return (
       <article className={cardClasses}>
         <Link to={ROUTES.buildArticleRoute(article.slug)} className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block p-3 cursor-pointer">
-          {showImage && (
+          {showImage && !imageError && (
             <div ref={containerRef} className="relative overflow-hidden rounded mb-3">
               {/* Image skeleton/placeholder */}
               {!isLoaded && (
@@ -705,7 +734,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
               )}
               
               {/* Actual image */}
-              {shouldLoad && (
+              {shouldLoad && !imageError && (
                 <img
                   src={article.imageUrl}
                   alt={article.title}
@@ -715,11 +744,12 @@ const NewsCard: React.FC<NewsCardProps> = ({
                   `}
                   loading={priority === 'high' ? 'eager' : 'lazy'}
                   onLoad={handleLoad}
+                  onError={handleError}
                   decoding="async"
                 />
               )}
               
-              {showCategory && isLoaded && (
+              {!imageError && showCategory && isLoaded && (
                 <div className="absolute top-2 left-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm ${getCategoryColor(article.category)}`}>
                     {article.category}
