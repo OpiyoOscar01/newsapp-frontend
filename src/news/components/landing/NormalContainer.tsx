@@ -9,6 +9,7 @@ type NormalContainerProps = {
   exploreHref: string;
   shouldInsertAd?: boolean;
   index?: number;
+  isLoading?: boolean; // ADD THIS LINE
 };
 
 const useNearViewport = (rootMargin = "600px") => {
@@ -41,7 +42,26 @@ const NormalContainer: React.FC<NormalContainerProps> = ({
   articles, 
   exploreHref, 
   shouldInsertAd = false,
+  isLoading = false, // ADD THIS LINE
 }) => {
+  // ADD THIS LOADING CHECK RIGHT HERE - before everything else
+  if (isLoading) {
+    return (
+      <div className="w-full animate-pulse">
+        <div className="space-y-4 lg:space-y-6">
+          {/* Top card skeleton */}
+          <div className="bg-gray-200 rounded-xl h-96 w-full"></div>
+          {/* Grid skeletons */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-gray-200 rounded-lg h-32 w-full"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Filter out articles with invalid image URLs (NewsCard will return null for broken images)
   const validArticles = articles.filter(article => article && article.imageUrl);
   

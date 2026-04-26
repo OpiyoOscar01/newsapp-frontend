@@ -381,12 +381,13 @@ const LandingPage: React.FC = () => {
             articleCount={categoryArticles.get(generalCategory.slug)?.length ?? 0}
             isLoading={allQueries[categories.findIndex(c => c.slug === generalCategory.slug)]?.isLoading ?? false}
           >
-            <BigContainer
-              articles={getCategorySlice(generalCategory.slug, true)}
-              exploreHref={`/category/${generalCategory.slug}`}
-              sidebarAd={selectRandomAd("landing", "sidebar")}
-              showAdHelperText={false}
-            />
+           <BigContainer
+            articles={getCategorySlice(generalCategory.slug, true)}
+            exploreHref={`/category/${generalCategory.slug}`}
+            sidebarAd={selectRandomAd("landing", "sidebar")}
+            showAdHelperText={false}
+            isLoading={allQueries[categories.findIndex(c => c.slug === generalCategory.slug)]?.isLoading ?? false}
+          />
           </CategorySection>
         )}
 
@@ -395,20 +396,20 @@ const LandingPage: React.FC = () => {
           const catIndex = categories.findIndex(c => c.slug === category.slug);
           const isLoadingCat = allQueries[catIndex]?.isLoading ?? false;
 
-          if (isLoadingCat) {
-            return (
-              <section key={category.slug} className="scroll-mt-20" data-category={category.slug}>
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-48 mb-8" />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-64 bg-gray-200 rounded-lg" />
-                    ))}
-                  </div>
-                </div>
-              </section>
-            );
-          }
+          // if (isLoadingCat) {
+          //   return (
+          //     <section key={category.slug} className="scroll-mt-20" data-category={category.slug}>
+          //       <div className="animate-pulse">
+          //         <div className="h-8 bg-gray-200 rounded w-48 mb-8" />
+          //         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          //           {Array.from({ length: 3 }).map((_, i) => (
+          //             <div key={i} className="h-64 bg-gray-200 rounded-lg" />
+          //           ))}
+          //         </div>
+          //       </div>
+          //     </section>
+          //   );
+          // }
 
           if (articles.length === 0) return null;
 
@@ -421,11 +422,12 @@ const LandingPage: React.FC = () => {
               articleCount={categoryArticles.get(category.slug)?.length ?? 0}
               isLoading={false}
             >
-              <NormalContainer
+             <NormalContainer
                 articles={articles}
                 exploreHref={`/category/${category.slug}`}
                 shouldInsertAd={shouldInsertAd}
                 index={index}
+                isLoading={isLoadingCat}
               />
             </CategorySection>
           );

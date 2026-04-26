@@ -8,6 +8,7 @@ type BigContainerProps = {
   exploreHref: string;
   sidebarAd?: Ad | null;
   showAdHelperText?: boolean;
+  isLoading?: boolean; // ADD THIS LINE
 };
 
 const BigContainer: React.FC<BigContainerProps> = ({
@@ -15,7 +16,31 @@ const BigContainer: React.FC<BigContainerProps> = ({
   exploreHref,
   sidebarAd,
   showAdHelperText = false,
+  isLoading = false, // ADD THIS LINE
 }) => {
+  // ADD THIS LOADING CHECK RIGHT HERE - before everything else
+  if (isLoading) {
+    return (
+      <div className="w-full animate-pulse">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="lg:col-span-2">
+            <div className="bg-gray-200 rounded-xl h-96 w-full"></div>
+          </div>
+          <div className="lg:col-span-1">
+            <div className="bg-gray-200 rounded-lg h-64 w-full"></div>
+          </div>
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mt-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-gray-200 rounded-lg h-32 w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Filter out undefined/null articles (NewsCard returns null for broken images)
   // Note: NewsCard now returns null for articles with broken images,
   // so we need to pre-filter or handle gracefully
