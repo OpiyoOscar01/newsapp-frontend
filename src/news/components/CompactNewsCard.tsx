@@ -26,7 +26,7 @@ const CompactNewsCard: React.FC<CompactNewsCardProps> = ({
   return (
     <article className={`compact-news-card ${className}`}>
       <Link
-        to={`/article/${article.id}`}
+        to={`/article/${article.slug}`}
         className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden block"
       >
         <div className="flex items-stretch gap-3 p-3 h-full">
