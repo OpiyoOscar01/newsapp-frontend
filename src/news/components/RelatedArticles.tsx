@@ -85,10 +85,11 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                     : article.title}
                 </h3>
 
-                {/* ✍️ Author */}
-                <p className="text-[11px] sm:text-xs text-gray-500">
-                  By {article.author}
-                </p>
+                {article.author && (
+                  <p className="text-[11px] sm:text-xs text-gray-500">
+                    By {article.author}
+                  </p>
+                )}
 
                 {/* ⏱️ Published Date & Read Time (large screens only) */}
                 <div className="hidden lg:flex text-xs text-gray-500 mt-1 gap-1">

@@ -455,8 +455,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-3 text-sm text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-semibold text-gray-700">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-semibold text-gray-700">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full">
@@ -493,8 +495,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-500 pt-3 border-t border-gray-100 mt-auto ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-medium text-gray-700">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-medium text-gray-700">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span className="flex items-center space-x-1">
@@ -628,9 +632,11 @@ const NewsCard: React.FC<NewsCardProps> = ({
                 </h3>
 
                 {/* ✍️ Author (small screens only) */}
-                <p className="text-[11px] text-gray-500 mb-1 md:hidden">
-                  By {article.author}
-                </p>
+                {article.author && (
+                  <p className="text-[11px] text-gray-500 mb-1 md:hidden">
+                    By {article.author}
+                  </p>
+                )}
 
                 {/* ⏱️ Metadata (visible on larger screens) */}
                 <div
@@ -640,8 +646,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
                     ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}
                   `}
                 >
-                  <span className="font-medium">{article.author}</span>
-                  <span>•</span>
+                  {article.author && (
+                    <span className="font-medium">{article.author}</span>
+                  )}
+                  {article.author && <span>•</span>}
                   <span>{formatDate(article.publishedAt)}</span>
                   <span>•</span>
                   <span>{article.readTime} min</span>
@@ -704,8 +712,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-3 text-sm text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-semibold text-gray-700">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-semibold text-gray-700">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span className="flex items-center space-x-1">
@@ -808,8 +818,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-2 text-sm text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-medium text-gray-700">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-medium text-gray-700">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span>{article.readTime} min</span>
@@ -834,8 +846,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-2 text-sm text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-medium text-gray-700">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-medium text-gray-700">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span>{article.readTime} min</span>
@@ -860,8 +874,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
               {article.summary}
             </p>
             <div className={`flex flex-wrap items-center gap-2 text-xs text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-              <span className="font-medium">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-medium">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span>{formatDate(article.publishedAt)}</span>
               <span>•</span>
               <span>{article.readTime} min</span>
@@ -882,8 +898,10 @@ const NewsCard: React.FC<NewsCardProps> = ({
             {article.title}
           </h3>
           <div className={`flex flex-wrap items-center gap-2 text-xs text-gray-500 ${shouldHideMetaMobile ? 'hidden md:flex' : 'flex'}`}>
-            <span>{article.author}</span>
-            <span>•</span>
+            {article.author && (
+              <span>{article.author}</span>
+            )}
+            {article.author && <span>•</span>}
             <span>{formatDate(article.publishedAt)}</span>
             <span>•</span>
             <span>{article.readTime} min</span>

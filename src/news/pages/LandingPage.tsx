@@ -155,7 +155,7 @@ const formatArticle = (apiArticle: ApiArticle): AppArticle => {
     title: apiArticle.title,
     summary: apiArticle.excerpt || apiArticle.description || "",
     content: apiArticle.content || "",
-    author: apiArticle.author || "Unknown",
+    author: apiArticle.author || '',
     publishedAt: apiArticle.published_at,
     imageUrl: apiArticle.image_url || "",
     category: apiArticle.category_model?.name || apiArticle.category,

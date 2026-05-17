@@ -72,10 +72,12 @@ const ArticlePageSidebar: React.FC<ArticlePageSidebarProps> = ({
               <dd className="mt-1 text-sm text-gray-900">{article.readTime} minutes</dd>
             </div>
 
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Author</dt>
-              <dd className="mt-1 text-sm text-gray-900">{article.author}</dd>
-            </div>
+            {article.author && (
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Author</dt>
+                <dd className="mt-1 text-sm text-gray-900">{article.author}</dd>
+              </div>
+            )}
           </dl>
         </div>
 

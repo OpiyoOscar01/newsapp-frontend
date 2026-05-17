@@ -40,8 +40,10 @@ const CompactNewsCard: React.FC<CompactNewsCardProps> = ({
 
             {/* Metadata */}
             <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500 mt-auto">
-              <span className="font-medium truncate max-w-[120px]">{article.author}</span>
-              <span>•</span>
+              {article.author && (
+                <span className="font-medium truncate max-w-[120px]">{article.author}</span>
+              )}
+              {article.author && <span>•</span>}
               <span className="whitespace-nowrap">{formatDate(article.publishedAt)}</span>
               <span>•</span>
               {/* <span className="whitespace-nowrap">{article.readTime} min</span> */}

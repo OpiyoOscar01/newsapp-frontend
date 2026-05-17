@@ -55,19 +55,21 @@ const ArticlePageHeader: React.FC<ArticlePageHeaderProps> = ({ article }) => {
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-6">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700">
-                <User className="h-5 w-5 text-white" />
-              </div>
+            {article.author && (
+              <div className="flex items-center space-x-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700">
+                  <User className="h-5 w-5 text-white" />
+                </div>
 
-              <div>
-                <p className="font-semibold text-gray-900">{article.author}</p>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Calendar className="h-3 w-3" />
-                  <span>{formatFullDate(article.publishedAt)}</span>
+                <div>
+                  <p className="font-semibold text-gray-900">{article.author}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Calendar className="h-3 w-3" />
+                    <span>{formatFullDate(article.publishedAt)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-center gap-1 text-sm text-gray-500">
               <Clock className="h-4 w-4" />

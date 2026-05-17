@@ -203,22 +203,7 @@ const CategoryPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Results Info */}
-          <div className="mb-6">
-            <p className="text-gray-600">
-              {searchQuery ? (
-                <>
-                  Found <span className="font-semibold">{filteredAndSortedArticles.length}</span> articles 
-                  for "<span className="font-semibold">{searchQuery}</span>" in {category.name}
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold">{filteredAndSortedArticles.length}</span> total articles 
-                  in {category.name}
-                </>
-              )}
-            </p>
-          </div>
+
 
           {/* Articles */}
           {paginatedData.items.length > 0 ? (

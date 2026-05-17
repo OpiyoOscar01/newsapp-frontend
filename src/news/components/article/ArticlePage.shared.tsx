@@ -43,7 +43,7 @@ export const convertToArticleRecord = (apiArticle: any): ArticleRecord => ({
   summary: apiArticle.summary || apiArticle.description || '',
   content: apiArticle.content || '',
   category: apiArticle.category || '',
-  author: apiArticle.author || 'Unknown',
+  author: apiArticle.author || '',
   publishedAt: apiArticle.published_at || apiArticle.publishedAt || new Date().toISOString(),
   readTime: apiArticle.readTime || Math.ceil((apiArticle.content?.length || 0) / 1000),
   imageUrl: apiArticle.image_url || apiArticle.imageUrl,

@@ -151,7 +151,7 @@ export class ArticleService {
       title: apiArticle.title,
       summary: summary,
       content: content,
-      author: apiArticle.author || 'DefinePress Staff',
+      author: apiArticle.author || '',
       publishedAt: apiArticle.published_at,
       imageUrl: apiArticle.image_url || this.getFallbackImage(apiArticle.category),
       category: apiArticle.category,
